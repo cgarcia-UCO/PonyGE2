@@ -2,6 +2,8 @@ from math import floor
 from re import DOTALL, MULTILINE, finditer, match
 from sys import maxsize
 
+import numpy as np
+
 from algorithm.parameters import params
 from utilities.misc.readappend_StringIO import ReadAppend_StringIO
 
@@ -95,8 +97,8 @@ class Grammar(object):
         with open(file_name, 'r') as bnf:
             self.read_bnf_stringio(ReadAppend_StringIO(bnf.read()))
 
-    def read_bnf_stringio(self, stringio):
-        bnf = stringio
+    def read_bnf_stringio(self, grammar_content):
+        bnf = grammar_content
 
         # Read the whole grammar file. This is now in a while because the ReadAppend_StringIO can be extended (append)
         # while being read. My intention is that, in case of reading special symbols, extend on-the-fly the grammar
@@ -142,6 +144,9 @@ class Grammar(object):
 
                     # Initialise empty data structures for production choice
                     tmp_production, terminalparts = [], None
+
+                    # Try processing GE_GENERATE: cases
+                    self.try_processing_generate_cases(p, grammar_content)
 
                     # special cases: GE_RANGE:dataset_n_vars will be
                     # transformed to productions 0 | 1 | ... |
@@ -263,6 +268,72 @@ class Grammar(object):
                                      rule.group('rulename'))
 
             content = bnf.read()
+
+    def try_processing_generate_cases(self, p, grammar_content):
+        # special cases: GE_GENERATE:****
+        # constructions will go over the dataset, creating possible conditions according to the values in it
+        GE_RANGE_regex = r'<GE_GENERATE:(?P<type_generation>\w*)>'
+        m = match(GE_RANGE_regex, p.group('production'))
+        if m:
+            if not hasattr(self, 'ge_generate_tags'):
+                self.ge_generate_tags = {}
+
+            try:
+                if m.group('type_generation') == "dataset_eq_conditions":
+
+                    # In case this tag was previously used, return
+                    if self.ge_generate_tags.get('dataset_eq_conditions', 'not used') == 'used':
+                        return
+
+                    self.ge_generate_tags['dataset_eq_conditions'] = 'used'
+                    # append a new rule in the grammar with the shape
+                    # <GE_GENERATE:dataset_eq_conditions> ::= x[0] == <value_0> | x[1] == <value_1>
+                    # and others for each <value_i> with the shape:
+                    # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+                    grammar_content.append('\n<GE_GENERATE:dataset_eq_conditions> ::= ')
+
+                    # Go over the features of the dataset.
+                    # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                    inputs = params['FITNESS_FUNCTION'].training_in
+                    grammar_content.append('(x[:,' + str(0) + '] == <value_' + str(0) + '>)')
+
+                    for i in range(1, inputs.shape[1]):
+                        grammar_content.append(' | (x[:,' + str(i) + '] == <value_' + str(i) + '>)')
+
+                    grammar_content.append('\n')
+
+                    for i in range(inputs.shape[1]):
+                        values = np.unique(inputs[:,i])
+                        grammar_content.append('<value_' + str(i) + '> ::= ' + str(values[0]))
+
+                        for j in values[1:]:
+                            grammar_content.append(' | ' + str(j))
+
+                        grammar_content.append('\n')
+
+                elif m.group('type_generation') == "dataset_target_labels":
+
+                    if self.ge_generate_tags.get('dataset_target_labels', 'not used') == 'used':
+                        return
+
+                    self.ge_generate_tags['dataset_target_labels'] = 'used'
+                    # In case this tag was previously used, return
+                    # if '<GE_GENERATE:dataset_target_labels> ::= ' in grammar_content:
+                    #     return
+
+                    # append a new rule in the grammar with the shape
+                    # <GE_GENERATE:dataset_target_labels> ::= label_1 | label_2 | ...
+                    labels = np.unique(params['FITNESS_FUNCTION'].training_exp)
+
+                    grammar_content.append('\n<GE_GENERATE:dataset_target_labels> ::= ' + str(labels[0]))
+                    for j in labels[1:]:
+                        grammar_content.append(' | ' + str(j))
+
+                    grammar_content.append('\n')
+
+            except (ValueError, AttributeError):
+                raise ValueError("Bad use of GE_RANGE: "
+                                 + m.group())
 
     def check_depths(self):
         """
