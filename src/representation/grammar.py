@@ -87,17 +87,21 @@ class Grammar(object):
 
     def read_bnf_file(self, file_name):
         """
-        Read a grammar file in BNF format. Parses the grammar and saves a
-        dict of all production rules and their possible choices.
-
-        :param file_name: A specified BNF grammar file.
-        :return: Nothing.
+        Read a grammar file in BNF format. Uses read_bnf_stringio after
+        reading the file into a StringIO object
         """
 
         with open(file_name, 'r') as bnf:
             self.read_bnf_stringio(ReadAppend_StringIO(bnf.read()))
 
     def read_bnf_stringio(self, grammar_content):
+        """
+        Read a grammar, from a StringIO, in BNF format. Parses the grammar and saves a
+        dict of all production rules and their possible choices.
+
+        :param file_name: A specified BNF grammar file.
+        :return: Nothing.
+        """
         bnf = grammar_content
 
         # Read the whole grammar file. This is now in a while because the ReadAppend_StringIO can be extended (append)
@@ -269,7 +273,24 @@ class Grammar(object):
 
             content = bnf.read()
 
+    def generate_values_feature(self, i, grammar_content):
+        """
+        TODO
+        """
+        inputs = params['FITNESS_FUNCTION'].training_in
+
+        values = np.unique(inputs[:, i])
+        grammar_content.append('<values_feature_' + str(i) + '> ::= ' + str(values[0]))
+
+        for j in values[1:]:
+            grammar_content.append(' | ' + str(j))
+
+        grammar_content.append('\n')
+
     def try_processing_generate_cases(self, p, grammar_content):
+        """
+        TODO
+        """
         # special cases: GE_GENERATE:****
         # constructions will go over the dataset, creating possible conditions according to the values in it
         GE_RANGE_regex = r'<GE_GENERATE:(?P<type_generation>\w*)>'
@@ -282,34 +303,29 @@ class Grammar(object):
                 if m.group('type_generation') == "dataset_eq_conditions":
 
                     # In case this tag was previously used, return
-                    if self.ge_generate_tags.get('dataset_eq_conditions', 'not used') == 'used':
-                        return
+                    if self.ge_generate_tags.get('dataset_eq_conditions', 'not used') == 'not used':
+                        self.ge_generate_tags['dataset_eq_conditions'] = 'used'
+                        # append a new rule in the grammar with the shape
+                        # <GE_GENERATE:dataset_eq_conditions> ::= x[0] == <value_0> | x[1] == <value_1>
+                        # and others for each <value_i> with the shape:
+                        # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+                        grammar_content.append('\n<GE_GENERATE:dataset_eq_conditions> ::= ')
 
-                    self.ge_generate_tags['dataset_eq_conditions'] = 'used'
-                    # append a new rule in the grammar with the shape
-                    # <GE_GENERATE:dataset_eq_conditions> ::= x[0] == <value_0> | x[1] == <value_1>
-                    # and others for each <value_i> with the shape:
-                    # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
-                    grammar_content.append('\n<GE_GENERATE:dataset_eq_conditions> ::= ')
+                        # Go over the features of the dataset.
+                        # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                        inputs = params['FITNESS_FUNCTION'].training_in
+                        grammar_content.append('(x[:,' + str(0) + '] == <values_feature_' + str(0) + '>)')
 
-                    # Go over the features of the dataset.
-                    # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
-                    inputs = params['FITNESS_FUNCTION'].training_in
-                    grammar_content.append('(x[:,' + str(0) + '] == <value_' + str(0) + '>)')
-
-                    for i in range(1, inputs.shape[1]):
-                        grammar_content.append(' | (x[:,' + str(i) + '] == <value_' + str(i) + '>)')
-
-                    grammar_content.append('\n')
-
-                    for i in range(inputs.shape[1]):
-                        values = np.unique(inputs[:,i])
-                        grammar_content.append('<value_' + str(i) + '> ::= ' + str(values[0]))
-
-                        for j in values[1:]:
-                            grammar_content.append(' | ' + str(j))
+                        for i in range(1, inputs.shape[1]):
+                            grammar_content.append(' | (x[:,' + str(i) + '] == <values_feature_' + str(i) + '>)')
 
                         grammar_content.append('\n')
+
+                        for i in range(inputs.shape[1]):
+
+                            if self.ge_generate_tags.get('values_feature_' + str(i), 'not used') == 'not used':
+                                self.ge_generate_tags['values_feature_' + str(i)] = 'used'
+                                self.generate_values_feature(i, grammar_content)
 
                 elif m.group('type_generation') == "dataset_target_labels":
 
