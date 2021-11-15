@@ -16,20 +16,22 @@ def partition(collection):
 def get_all_groups(collection):
     results = set()
 
-    for p in partition(something):
-        results.update(p) # I cannot do this, because lists are not hashable
+    for p in partition(collection):
+        # print(p)
+        for p2 in p:
+            # print('Insert', p2)
+            results.update((tuple(p2),))
 
     return results
 
 if __name__ == '__main__':
 
-    prueba = {1,2,3}
-    prueba.add(4)
-    # prueba.add([3,2,1]) # I cannot do this, because lists are not hashable
+    for i in range(0, 10):
+        something = list(range(1,i+2))
 
-    something = list(range(1,5))
-
-    for n, p in enumerate(partition(something), 1):
-        print(n, sorted(p))
-
-    # print(get_all_groups(something))
+        # for n, p in enumerate(partition(something), 1):
+        #     print(n, p)
+        #
+        # print('----------------------------------')
+        groups = get_all_groups(something)
+        print(i+1, len(groups), 2**(i+1)-1)
