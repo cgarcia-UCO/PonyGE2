@@ -1,7 +1,11 @@
+import io
 from os import path
 
 import numpy as np
+import pandas as pd
+
 from algorithm.parameters import params
+from scipy.io import arff
 
 
 def get_Xy_train_test_separate(train_filename, test_filename, skip_header=0):
@@ -102,8 +106,29 @@ def get_data(train, test):
         # There is no testing dataset used.
         test_set = None
 
-    # Read in the training and testing datasets from the specified files.
-    training_in, training_out, test_in, \
-    test_out = get_Xy_train_test_separate(train_set, test_set, skip_header=1)
+    # Arff support just for train set. # TODO consider the test set
+    if train_set.endswith('.arff'):
+        test_in, test_out = None, None
+        try:
+            data = arff.arffread.loadarff(train_set)
+        except UnicodeEncodeError:
+            with open(train_set, 'r') as f:
+                content = ''.join(f.readlines())
+                content = content.replace('á', 'a')
+                content = content.replace('é', 'e')
+                content = content.replace('í', 'i')
+                content = content.replace('ó', 'o')
+                content = content.replace('ú', 'u')
+                content = content.replace('ñ', 'n')
+                with io.StringIO(content) as f2:
+                    training_dataset, metadata = arff.loadarff(f2)
+                    training_dataset = pd.DataFrame(training_dataset)
+                    num_in_features = training_dataset.shape[1] - 1
+                    training_in = training_dataset.iloc[:,:num_in_features].copy() # TODO test if copy is neccessary
+                    training_out = training_dataset.iloc[:,num_in_features].copy() # TODO test if copy is neccessary
+    else:
+        # Read in the training and testing datasets from the specified files.
+        training_in, training_out, test_in, \
+        test_out = get_Xy_train_test_separate(train_set, test_set, skip_header=1)
 
     return training_in, training_out, test_in, test_out
