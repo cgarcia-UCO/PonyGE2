@@ -116,3 +116,53 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
             # let's always call the error function with the true
             # values first, the estimate second
             return params['ERROR_METRIC'](y, yhat)
+
+    def is_ithfeature_categorical(self, i, max_different_values = 10):
+        """
+        Return True if the ith feature in the dataset is categorical.
+
+        A feature is considered categorical in case the dataset contains no more than
+        max_different_values different values. Otherwise, it is considered numerical.
+
+        :param i: index of the feature to test if it is categorical
+        :param max_different_values: Maximum number of different values to consider the feature as categorical
+        :return: True if the ith feature of the dataset is categorical. False otherwise
+        """
+
+        if len(np.unique(self.training_in[:, i])) <= max_different_values:
+            return True
+        else:
+            return False
+
+    def get_first_categorical_feature(self, max_different_values = 10):
+        """
+        Return the index of the first categorical feature.
+
+        :param max_different_values: Maximum number of different values to consider the feature as categorical
+        :return: The index of the first categorical feature in the dataset of the fitness function.
+                    None in case all the features have more than max_different_values values
+        """
+
+        for i in range(self.training_in.shape[1]):
+            if self.is_ithfeature_categorical(i, max_different_values):
+                return i
+
+        return None
+
+    def get_first_numerical_feature(self, min_different_values = 11):
+        """
+        Return the index of the first numerical feature
+
+        A feature is considered categorical in case the dataset contains no more than
+        max_different_values different values. Otherwise, it is considered numerical.
+
+        :param min_different_values: Minimum number of different values to consider the feature as numerical
+        :return: The index of the first numerical feature in the dataset of the fitness function.
+                    None in case all the features have less than min_different_values
+        """
+
+        for i in range(self.training_in.shape[1]):
+            if not self.is_ithfeature_categorical(i, min_different_values - 1):
+                return i
+
+        return None
