@@ -348,7 +348,7 @@ class Grammar(object):
                         return 'not valid tag'
 
             except (ValueError, AttributeError):
-                raise ValueError("Bad use of GE_RANGE: "
+                raise ValueError("Bad use of GE_GENERATE: "
                                  + m.group())
 
         return 'ok'
