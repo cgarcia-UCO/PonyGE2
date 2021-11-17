@@ -407,7 +407,7 @@ class Grammar(object):
 
                 grammar_content.append('\n')
 
-                for i in range(first_feature, input.shape[1]):
+                for i in range(first_feature, inputs.shape[1]):
                     if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
                         self._generate_values_feature(i, grammar_content)
                         num_processed_features += 1
@@ -449,7 +449,7 @@ class Grammar(object):
 
                 grammar_content.append('\n')
 
-                for i in range(first_feature, input.shape[1]):
+                for i in range(first_feature, inputs.shape[1]):
                     if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
                         self._generate_values_feature(i, grammar_content)
                         num_processed_features += 1
