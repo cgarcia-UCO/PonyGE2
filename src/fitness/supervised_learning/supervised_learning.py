@@ -118,6 +118,23 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
             # values first, the estimate second
             return params['ERROR_METRIC'](y, yhat)
 
+    def num_of_different_values(self, i):
+        """
+        Return the number of different values in the i-th feature of the dataset
+
+        :param i: index of the feature for which the number of different values is required
+        :return: Number of different values in the i-th feature of the dataset
+        """
+        if isinstance(self.training_in, pd.DataFrame):
+            values = self.training_in.iloc[:,i]
+            values = values[values.notna()]
+            return len(np.unique(values))
+        elif isinstance(self.training_in, np.ndarray):
+            return len(np.unique(self.training_in[:, i]))
+        else:
+            raise Exception('Training dataset is not a Numpy.ndarray nor a pandas.DataFrame: ' + type(self.training_in))
+
+
     def is_ithfeature_categorical(self, i, max_different_values = 10):
         """
         Return True if the ith feature in the dataset is categorical.
