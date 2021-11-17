@@ -153,7 +153,7 @@ def precision_score(y, yhat):
     """
 
     # if phen is a constant, eg 0.001 (doesn't refer to x), then yhat
-    # will be a constant. that will break f1_score. so convert to a
+    # will be a constant. that will break precision_score. so convert to a
     # constant array.
     if not isinstance(yhat, np.ndarray) or len(yhat.shape) < 1:
         yhat = np.ones_like(y) * yhat
@@ -180,11 +180,7 @@ def precision_score(y, yhat):
         # undefined, and sklearn will give a runtime warning and
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
-
-        print(sklearn_precision_score(
-            y-1, yhat, average="macro", zero_division=0))
-        exit()
-        return sklearn_precision_score(y, yhat, average="weighted", zero_division=0)
+        return sklearn_precision_score(y, yhat, average="binary", zero_division=0)
 
 
 # Set maximise attribute for precision_score error metric.
@@ -206,7 +202,7 @@ def recall_score(y, yhat):
     """
 
     # if phen is a constant, eg 0.001 (doesn't refer to x), then yhat
-    # will be a constant. that will break f1_score. so convert to a
+    # will be a constant. that will break recall_score. so convert to a
     # constant array.
     if not isinstance(yhat, np.ndarray) or len(yhat.shape) < 1:
         yhat = np.ones_like(y) * yhat
@@ -232,7 +228,7 @@ def recall_score(y, yhat):
         # undefined, and sklearn will give a runtime warning and
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
-        return sklearn_recall_score(y, yhat, average="weighted", zero_division=0)
+        return sklearn_recall_score(y, yhat, average="binary", zero_division=0)
 
 
 # Set maximise attribute for recall_score error metric.
@@ -243,14 +239,7 @@ def precision_and_recall_score(y, yhat):
     """
     Compute the product (precision · recall)
     """
-    precision = precision_score(y, yhat)
-    recall = recall_score(y, yhat)
-    p_and_r = precision * recall
-    print("PRECISION = ", precision)
-    print("RECALL = ", recall)
-    print("PRODUCT = ", p_and_r)
-    print("\n")
-    return p_and_r
+    return precision_score(y, yhat) * recall_score(y, yhat)
 
 
 # Set maximise attribute for precision_and_recall_score error metric.
