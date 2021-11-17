@@ -85,6 +85,36 @@ def get_Xy_train_test_separate(train_filename, test_filename, skip_header=0):
 
     return train_X, train_y, test_X, test_y
 
+def read_arff(file):
+    """
+    Read an arff dataset and returns the input variables and output ones
+
+    :param file: Path to the file to be read
+    :return: The parsed data contained in the dataset file in a tuple (input, output)
+    """
+    try:
+        data, metadata = arff.arffread.loadarff(file)
+    except UnicodeEncodeError:
+        with open(file, 'r') as f:
+            content = ''.join(f.readlines())
+            content = content.replace('á', 'a')
+            content = content.replace('é', 'e')
+            content = content.replace('í', 'i')
+            content = content.replace('ó', 'o')
+            content = content.replace('ú', 'u')
+            content = content.replace('ñ', 'n')
+            with io.StringIO(content) as f2:
+                data, metadata = arff.loadarff(f2)
+
+    data = pd.DataFrame(data)
+    data = \
+        data.apply(lambda x: x.str.decode('utf-8') if x.dtype == 'object' else x)
+    data[data == '?'] = np.nan
+    num_in_features = data.shape[1] - 1
+    input_data = data.iloc[:, :num_in_features]
+    output = data.iloc[:, num_in_features]
+
+    return input_data, output
 
 def get_data(train, test):
     """
@@ -106,29 +136,13 @@ def get_data(train, test):
         # There is no testing dataset used.
         test_set = None
 
-    # Arff support just for train set. # TODO consider the test set
+    # Arff support just for train set.
     if train_set.endswith('.arff'):
         test_in, test_out = None, None
-        try:
-            data = arff.arffread.loadarff(train_set)
-        except UnicodeEncodeError:
-            with open(train_set, 'r') as f:
-                content = ''.join(f.readlines())
-                content = content.replace('á', 'a')
-                content = content.replace('é', 'e')
-                content = content.replace('í', 'i')
-                content = content.replace('ó', 'o')
-                content = content.replace('ú', 'u')
-                content = content.replace('ñ', 'n')
-                with io.StringIO(content) as f2:
-                    training_dataset, metadata = arff.loadarff(f2)
-                    training_dataset = pd.DataFrame(training_dataset)
-                    training_dataset =\
-                        training_dataset.apply(lambda x : x.str.decode('utf-8') if x.dtype == 'object' else x)
-                    training_dataset[training_dataset == '?'] = np.nan
-                    num_in_features = training_dataset.shape[1] - 1
-                    training_in = training_dataset.iloc[:,:num_in_features].copy() # TODO test if copy is neccessary
-                    training_out = training_dataset.iloc[:,num_in_features].copy() # TODO test if copy is neccessary
+        training_in, training_out = read_arff(train_set)
+
+        if test_set is not None:
+            test_in, test_out = read_arff(test_set)
     else:
         # Read in the training and testing datasets from the specified files.
         training_in, training_out, test_in, \

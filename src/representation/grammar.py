@@ -7,6 +7,7 @@ import pandas as pd
 
 from algorithm.parameters import params
 from utilities.misc.readappend_StringIO import ReadAppend_StringIO
+from utilities.misc.set_partition import get_all_groups
 
 
 class Grammar(object):
@@ -293,20 +294,26 @@ class Grammar(object):
             inputs = params['FITNESS_FUNCTION'].training_in
 
             if isinstance(inputs, pd.DataFrame):
-                values = np.unique(inputs.iloc[:,i])
+                values = inputs.iloc[:,i]
+                values = values[values.notna()]
+                values = np.unique(values)
             elif isinstance(inputs, np.ndarray):
                 values = np.unique(inputs[:, i])
             else:
                 raise Exception('Training dataset is not a Numpy.ndarray'
                                 ' nor a pandas.DataFrame: ' + type(self.training_in))
 
-            grammar_content.append('<values_feature_' + str(i) + '> ::= \'' + str(values[0]) + '\'')
+            values = list(get_all_groups(list(values)))
+            header_required_quotation = '\"'
+            tail_required_quotation = '\"'
+
+            grammar_content.append('<subset_values_feature_' + str(i) + '> ::= ' + header_required_quotation
+                                   + str(values[0]) + tail_required_quotation)
 
             for j in values[1:]:
-                grammar_content.append(' | \'' + str(j) + '\'')
+                grammar_content.append(' | ' + header_required_quotation + str(j) + tail_required_quotation)
 
             grammar_content.append('\n')
-
 
     def _generate_values_feature(self, i, grammar_content):
         """
@@ -372,15 +379,16 @@ class Grammar(object):
                 self.ge_generate_tags = {}
 
             try:
+                not_valid_tag = 'not valid tag'
                 # Generation of not equity conditions for the categorical features in the dataset
                 if m.group('type_generation') == "dataset_neq_conditions":
                     if 0 == self._generate_neq_conditions_rules(grammar_content):
-                        return 'not valid tag'
+                        return not_valid_tag
 
                 # Generation of equity conditions for the features in the dataset
                 elif m.group('type_generation') == "dataset_eq_conditions":
                     if 0 == self._generate_eq_conditions_rules(grammar_content):
-                        return 'not valid tag'
+                        return not_valid_tag
 
                 # Generation of target labels
                 elif m.group('type_generation') == "dataset_target_labels":
@@ -388,7 +396,11 @@ class Grammar(object):
 
                 elif m.group('type_generation') == 'dataset_lessequal_conditions':
                     if 0 == self._generate_lessequal_condition_rules(grammar_content):
-                        return 'not valid tag'
+                        return not_valid_tag
+
+                elif m.group('type_generation') == 'dataset_inset_conditions':
+                    if 0 == self._generate_inset_conditions_rules(grammar_content):
+                        return not_valid_tag
 
             except (ValueError, AttributeError):
                 raise ValueError("Bad use of GE_GENERATE: "
@@ -416,6 +428,57 @@ class Grammar(object):
             for j in labels[1:]:
                 grammar_content.append(' | \"\'' + str(j) + '\'\"')
             grammar_content.append('\n')
+
+    def _generate_inset_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with inset conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for categorical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_inset_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_inset_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_inset_conditions> ::= x[0] in <value_0> | x[1] in <value_1> | ...
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique subset of values in x[0]>> | <<second unique...
+            num_processed_features = 0
+            inputs = params['FITNESS_FUNCTION'].training_in
+            first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
+
+            while first_feature < inputs.shape[1] and\
+                    (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
+                     not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
+                first_feature += 1
+
+            if first_feature is not None and first_feature < inputs.shape[1]:
+                grammar_content.append('\n<GE_GENERATE:dataset_inset_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = 'np.isin(x.iloc[:,' if pandas_format else 'np.isin(x[:,'
+                grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>)')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>)')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        self._generate_all_subsets(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['inset_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['inset_processed_features']
 
     def _generate_neq_conditions_rules(self, grammar_content, pandas_format=True):
         """

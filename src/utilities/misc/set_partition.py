@@ -1,37 +1,18 @@
-# Copied from https://stackoverflow.com/a/30134039
+from itertools import chain, combinations
 
-def partition(collection):
-    if len(collection) == 1:
-        yield [ collection ]
-        return
+def get_all_groups(collection, min_size=2, max_size=8):
+    """
+    Return all the subsets of values in collection with sizes between min_size and max_size
 
-    first = collection[0]
-    for smaller in partition(collection[1:]):
-        # insert `first` in each of the subpartition's subsets
-        for n, subset in enumerate(smaller):
-            yield smaller[:n] + [[ first ] + subset]  + smaller[n+1:]
-        # put `first` in its own subset
-        yield [ [ first ] ] + smaller
+    In case len(collection) > 20, max_size is reduced to 3
 
-def get_all_groups(collection):
-    results = set()
+    :param collection: Iterable, for instance, a list of values
+    :param min_size: Minimum size of the generated subsets
+    :param max_size: Maximum size of the generated subsets
+    :return: The set of subsets of values with sizes between min_size and max_size
+    """
 
-    for p in partition(collection):
-        # print(p)
-        for p2 in p:
-            # print('Insert', p2)
-            results.update((tuple(p2),))
+    if len(collection) > 20:
+        max_size = 3
 
-    return results
-
-if __name__ == '__main__':
-
-    for i in range(0, 10):
-        something = list(range(1,i+2))
-
-        # for n, p in enumerate(partition(something), 1):
-        #     print(n, p)
-        #
-        # print('----------------------------------')
-        groups = get_all_groups(something)
-        print(i+1, len(groups), 2**(i+1)-1)
+    return chain.from_iterable(combinations(collection, r) for r in range(min_size,max_size)) # range(len(collection) + 1))
