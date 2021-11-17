@@ -402,6 +402,9 @@ class Grammar(object):
                     if 0 == self._generate_inset_conditions_rules(grammar_content):
                         return not_valid_tag
 
+                # TODO dataset_greater_conditions
+                # TODO dataset_notinset_conditions
+
             except (ValueError, AttributeError):
                 raise ValueError("Bad use of GE_GENERATE: "
                                  + m.group())
