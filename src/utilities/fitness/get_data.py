@@ -123,6 +123,9 @@ def get_data(train, test):
                 with io.StringIO(content) as f2:
                     training_dataset, metadata = arff.loadarff(f2)
                     training_dataset = pd.DataFrame(training_dataset)
+                    training_dataset =\
+                        training_dataset.apply(lambda x : x.str.decode('utf-8') if x.dtype == 'object' else x)
+                    training_dataset[training_dataset == '?'] = np.nan
                     num_in_features = training_dataset.shape[1] - 1
                     training_in = training_dataset.iloc[:,:num_in_features].copy() # TODO test if copy is neccessary
                     training_out = training_dataset.iloc[:,num_in_features].copy() # TODO test if copy is neccessary

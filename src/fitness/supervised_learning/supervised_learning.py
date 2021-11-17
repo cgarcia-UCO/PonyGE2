@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 np.seterr(all="raise")
 
@@ -121,6 +122,10 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
         """
         Return True if the ith feature in the dataset is categorical.
 
+        In case that self.training_in is a pandas DataFrame, a feature is considered categorical
+        if self.training_in[i].dtype == object, and numerical of self.training_in[i].dtype == float64
+
+        In case that self.training_in is a NumPy ndarray,
         A feature is considered categorical in case the dataset contains no more than
         max_different_values different values. Otherwise, it is considered numerical.
 
@@ -129,10 +134,18 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
         :return: True if the ith feature of the dataset is categorical. False otherwise
         """
 
-        if len(np.unique(self.training_in[:, i])) <= max_different_values:
-            return True
+        if isinstance(self.training_in, pd.DataFrame):
+            if self.training_in.iloc[:,i].dtype == 'object':
+                return True
+            else:
+                return False
+        elif isinstance(self.training_in, np.ndarray):
+            if len(np.unique(self.training_in[:, i])) <= max_different_values:
+                return True
+            else:
+                return False
         else:
-            return False
+            raise Exception('Training dataset is not a Numpy.ndarray nor a pandas.DataFrame: ' + type(self.training_in))
 
     def get_first_categorical_feature(self, max_different_values = 10):
         """
