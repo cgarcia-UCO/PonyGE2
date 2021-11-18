@@ -2,7 +2,12 @@ from math import floor
 from re import DOTALL, MULTILINE, finditer, match
 from sys import maxsize
 
+import numpy as np
+import pandas as pd
+
 from algorithm.parameters import params
+from utilities.misc.readappend_StringIO import ReadAppend_StringIO
+from utilities.misc.set_partition import get_all_groups
 
 
 class Grammar(object):
@@ -84,16 +89,31 @@ class Grammar(object):
 
     def read_bnf_file(self, file_name):
         """
-        Read a grammar file in BNF format. Parses the grammar and saves a
-        dict of all production rules and their possible choices.
+        Read a grammar file in BNF format. Uses read_bnf_stringio after
+        reading the file into a StringIO object
 
-        :param file_name: A specified BNF grammar file.
+        :param file_name: A specified BNF grammar file
         :return: Nothing.
         """
 
         with open(file_name, 'r') as bnf:
-            # Read the whole grammar file.
-            content = bnf.read()
+            self.read_bnf_stringio(ReadAppend_StringIO(bnf.read()))
+
+    def read_bnf_stringio(self, grammar_content):
+        """
+        Read a grammar, from a StringIO, in BNF format. Parses the grammar and saves a
+        dict of all production rules and their possible choices.
+
+        :param file_name: A specified BNF grammar file (already open or in a StringIO buffer).
+        :return: Nothing.
+        """
+        bnf = grammar_content
+
+        # Read the whole grammar file. This is now in a while because the ReadAppend_StringIO can be extended (append)
+        # while being read. My intention is that, in case of reading special symbols, extend on-the-fly the grammar
+        # with automatically generated rules and rule-productions
+        content = bnf.read()
+        while len(content) > 0:
 
             for rule in finditer(self.ruleregex, content, DOTALL):
                 # Find all rules in the grammar
@@ -128,6 +148,12 @@ class Grammar(object):
 
                     # Initialise empty data structures for production choice
                     tmp_production, terminalparts = [], None
+
+                    # Try processing GE_GENERATE: cases
+                    # In case the processing was erroneous, for instance because of the presence of
+                    # a tag incompatible with the dataset, skip the tag
+                    if self.try_processing_generate_cases(p, grammar_content) == 'not valid tag':
+                        continue
 
                     # special cases: GE_RANGE:dataset_n_vars will be
                     # transformed to productions 0 | 1 | ... |
@@ -247,6 +273,447 @@ class Grammar(object):
                     # Conflicting rules with the same name.
                     raise ValueError("lhs should be unique",
                                      rule.group('rulename'))
+
+            content = bnf.read()
+
+    def _generate_all_subsets(self, i, grammar_content):
+        """
+        Extend the grammar with production rules with all the subset values for the i-th feature,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning
+
+        :param i: Index of the feature of the dataset considered for generating the new production rule
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :return: Nothing.
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('subset_values_feature_' + str(i), 'not used') == 'not used':
+            self.ge_generate_tags['subset_values_feature_' + str(i)] = 'used'
+
+            inputs = params['FITNESS_FUNCTION'].training_in
+
+            if isinstance(inputs, pd.DataFrame):
+                values = inputs.iloc[:,i]
+                values = values[values.notna()]
+                values = np.unique(values)
+            elif isinstance(inputs, np.ndarray):
+                values = np.unique(inputs[:, i])
+            else:
+                raise Exception('Training dataset is not a Numpy.ndarray'
+                                ' nor a pandas.DataFrame: ' + type(self.training_in))
+
+            values = list(get_all_groups(list(values)))
+            header_required_quotation = '\"'
+            tail_required_quotation = '\"'
+
+            grammar_content.append('<subset_values_feature_' + str(i) + '> ::= ' + header_required_quotation
+                                   + str(values[0]) + tail_required_quotation)
+
+            for j in values[1:]:
+                grammar_content.append(' | ' + header_required_quotation + str(j) + tail_required_quotation)
+
+            grammar_content.append('\n')
+
+    def _generate_values_feature(self, i, grammar_content):
+        """
+        Extend the grammar with production rules for the values of the i-th feature,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning
+
+        :param i: Index of the feature of the dataset considered for generating the new production rules
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :return: Nothing.
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('values_feature_' + str(i), 'not used') == 'not used':
+            self.ge_generate_tags['values_feature_' + str(i)] = 'used'
+
+            inputs = params['FITNESS_FUNCTION'].training_in
+
+            if isinstance(inputs, pd.DataFrame):
+                values = inputs.iloc[:,i]
+                values = values[values.notna()]
+                values = np.unique(values)
+            elif isinstance(inputs, np.ndarray):
+                values = np.unique(inputs[:, i])
+            else:
+                raise Exception('Training dataset is not a Numpy.ndarray'
+                                ' nor a pandas.DataFrame: ' + type(self.training_in))
+
+            header_required_quotation = '\"\'' if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) else ''
+            tail_required_quotation = '\'\"' if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) else ''
+
+            grammar_content.append('<values_feature_' + str(i) + '> ::= ' + header_required_quotation
+                                   + str(values[0]) + tail_required_quotation)
+
+            for j in values[1:]:
+                grammar_content.append(' | ' + header_required_quotation + str(j) + tail_required_quotation)
+
+            grammar_content.append('\n')
+
+    def try_processing_generate_cases(self, p, grammar_content):
+        """
+        Extend the grammar with production rules derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        Some types of production rules  are available just for categorical features, other just for numerical features.
+        A feature is considered categorical in case the dataset contains no more than 10 different values.
+        Otherwise, it is considered numerical.
+
+        :param p: Production of the grammar being currently processed
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :return: 'not valid tag', in case the tag is not compatible with the dataset, 'ok' otherwise.
+        """
+
+        # special cases: GE_GENERATE:****
+        # constructions will go over the dataset, creating possible conditions according to the values in it
+        GE_RANGE_regex = r'<GE_GENERATE:(?P<type_generation>\w*)>'
+        m = match(GE_RANGE_regex, p.group('production'))
+        if m:
+
+            # Some production rules must not be generated twice. Thus, this new member variable records those
+            # set of production produced.
+            if not hasattr(self, 'ge_generate_tags'):
+                self.ge_generate_tags = {}
+
+            try:
+                not_valid_tag = 'not valid tag'
+                # Generation of not equity conditions for the categorical features in the dataset
+                if m.group('type_generation') == "dataset_neq_conditions":
+                    if 0 == self._generate_neq_conditions_rules(grammar_content):
+                        return not_valid_tag
+
+                # Generation of equity conditions for the features in the dataset
+                elif m.group('type_generation') == "dataset_eq_conditions":
+                    if 0 == self._generate_eq_conditions_rules(grammar_content):
+                        return not_valid_tag
+
+                # Generation of target labels
+                elif m.group('type_generation') == "dataset_target_labels":
+                    self._generate_target_labels(grammar_content)
+
+                elif m.group('type_generation') == 'dataset_lessequal_conditions':
+                    if 0 == self._generate_lessequal_condition_rules(grammar_content):
+                        return not_valid_tag
+
+                elif m.group('type_generation') == 'dataset_inset_conditions':
+                    if 0 == self._generate_inset_conditions_rules(grammar_content):
+                        return not_valid_tag
+
+                elif m.group('type_generation') == 'dataset_notin_conditions':
+                    if 0 == self._generate_notin_conditions_rules(grammar_content):
+                        return not_valid_tag
+
+                elif m.group('type_generation') == 'dataset_greater_conditions':
+                    if 0 == self._generate_greater_conditions_rules(grammar_content):
+                        return not_valid_tag
+
+            except (ValueError, AttributeError):
+                raise ValueError("Bad use of GE_GENERATE: "
+                                 + m.group())
+
+        return 'ok'
+
+    def _generate_target_labels(self, grammar_content):
+        """
+        Extend the grammar with a production rule with the values of different values of the target output,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.classification.
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :return: Nothing.
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_target_labels', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_target_labels'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_target_labels> ::= label_1 | label_2 | ...
+            labels = np.unique(params['FITNESS_FUNCTION'].training_exp)
+            grammar_content.append('\n<GE_GENERATE:dataset_target_labels> ::= \"\'' + str(labels[0]) + '\'\"')
+            for j in labels[1:]:
+                grammar_content.append(' | \"\'' + str(j) + '\'\"')
+            grammar_content.append('\n')
+
+    def _generate_notin_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with not in conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for categorical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_notin_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_notin_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_inset_conditions> ::= x[0] in <value_0> | x[1] in <value_1> | ...
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique subset of values in x[0]>> | <<second unique...
+            num_processed_features = 0
+            inputs = params['FITNESS_FUNCTION'].training_in
+            first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
+
+            while first_feature < inputs.shape[1] and\
+                    (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
+                     not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
+                first_feature += 1
+
+            if first_feature is not None and first_feature < inputs.shape[1]:
+                grammar_content.append('\n<GE_GENERATE:dataset_notin_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(~np.isin(x.iloc[:,' if pandas_format else '(~np.isin(x[:,'
+                grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        self._generate_all_subsets(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['notin_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['notin_processed_features']
+
+    def _generate_inset_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with inset conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for categorical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_inset_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_inset_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_inset_conditions> ::= x[0] in <value_0> | x[1] in <value_1> | ...
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique subset of values in x[0]>> | <<second unique...
+            num_processed_features = 0
+            inputs = params['FITNESS_FUNCTION'].training_in
+            first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
+
+            while first_feature < inputs.shape[1] and\
+                    (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
+                     not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
+                first_feature += 1
+
+            if first_feature is not None and first_feature < inputs.shape[1]:
+                grammar_content.append('\n<GE_GENERATE:dataset_inset_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(np.isin(x.iloc[:,' if pandas_format else 'np.isin(x[:,'
+                grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                        self._generate_all_subsets(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['inset_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['inset_processed_features']
+
+    def _generate_neq_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with NOT equity conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for categorical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_neq_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_neq_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_eq_conditions> ::= x[0] != <value_0> | x[1] != <value_1>
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+            num_processed_features = 0
+            first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
+            inputs = params['FITNESS_FUNCTION'].training_in
+            if first_feature is not None:
+                grammar_content.append('\n<GE_GENERATE:dataset_neq_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(x.iloc[:,' if pandas_format else '(x[:,'
+                grammar_content.append(header + str(first_feature) + '] != <values_feature_' + str(first_feature) + '>)')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        grammar_content.append(' | '+ header + str(i) + '] != <values_feature_' + str(i) + '>)')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        self._generate_values_feature(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['neq_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['neq_processed_features']
+
+    def _generate_eq_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with equity conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for categorical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_eq_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_eq_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_eq_conditions> ::= x[0] == <value_0> | x[1] == <value_1>
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+            num_processed_features = 0
+            first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
+            inputs = params['FITNESS_FUNCTION'].training_in
+            if first_feature is not None:
+                grammar_content.append('\n<GE_GENERATE:dataset_eq_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(x.iloc[:,' if pandas_format else '(x[:,'
+                grammar_content.append(header + str(first_feature) + '] == <values_feature_' + str(first_feature) + '>)')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        grammar_content.append(' | ' + header + str(i) + '] == <values_feature_' + str(i) + '>)')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        self._generate_values_feature(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['eq_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['eq_processed_features']
+
+    def _generate_greater_conditions_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with greater than conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for numerical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_greater_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_greater_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_eq_conditions> ::= x[0] <= <value_0> | x[1] <= <value_1>
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+            num_processed_features = 0
+            first_feature = params['FITNESS_FUNCTION'].get_first_numerical_feature()
+            inputs = params['FITNESS_FUNCTION'].training_in
+            if first_feature is not None:
+                grammar_content.append('\n<GE_GENERATE:dataset_greater_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(x.iloc[:,' if pandas_format else '(x[:,'
+                grammar_content.append(header + str(first_feature) + '] > <values_feature_' + str(first_feature) + '>)')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if not params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        grammar_content.append(' | ' + header + str(i) + '] > <values_feature_' + str(i) + '>)')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if not params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        self._generate_values_feature(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['greater_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['greater_processed_features']
+
+    def _generate_lessequal_condition_rules(self, grammar_content, pandas_format=True):
+        """
+        Extend the grammar with production rules with less than or equal to conditions,
+        derived from the values in the dataset of the fitness function,
+        which is expected to be an instance of supervised_learning.supervised_learning.
+
+        This type of new production rules are generated just for numerical features
+
+        :param grammar_content: StringIO buffer object where new rules are appended
+        :param pandas_format: Indicates if conditions should be written as x.iloc[:,... or x[:,... otherwise
+        :return: The number of processed features (this time or ever).
+        """
+
+        # In case this tag was not previously used
+        if self.ge_generate_tags.get('dataset_lessequal_conditions', 'not used') == 'not used':
+            self.ge_generate_tags['dataset_lessequal_conditions'] = 'used'
+            # append a new rule in the grammar with the shape
+            # <GE_GENERATE:dataset_eq_conditions> ::= x[0] <= <value_0> | x[1] <= <value_1>
+            # and others for each <value_i> with the shape:
+            # <value_i> ::= <<first unique value in x[0]>> | <<second unique...
+            num_processed_features = 0
+            first_feature = params['FITNESS_FUNCTION'].get_first_numerical_feature()
+            inputs = params['FITNESS_FUNCTION'].training_in
+            if first_feature is not None:
+                grammar_content.append('\n<GE_GENERATE:dataset_lessequal_conditions> ::= ')
+                # Go over the features of the dataset.
+                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                header = '(x.iloc[:,' if pandas_format else '(x[:,'
+                grammar_content.append(header + str(first_feature) + '] <= <values_feature_' + str(first_feature) + '>)')
+                for i in range(first_feature + 1, inputs.shape[1]):
+                    if not params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        grammar_content.append(' | ' + header + str(i) + '] <= <values_feature_' + str(i) + '>)')
+
+                grammar_content.append('\n')
+
+                for i in range(first_feature, inputs.shape[1]):
+                    if not params['FITNESS_FUNCTION'].is_ithfeature_categorical(i):
+                        self._generate_values_feature(i, grammar_content)
+                        num_processed_features += 1
+
+            self.ge_generate_tags['less_equal_processed_features'] = num_processed_features
+
+        return self.ge_generate_tags['less_equal_processed_features']
 
     def check_depths(self):
         """

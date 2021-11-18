@@ -112,7 +112,8 @@ def f1_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    yhat = (yhat > 0)
+    if yhat.dtype != '<U2' and yhat.dtype != 'object': # Only if they are not string labels
+        yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
