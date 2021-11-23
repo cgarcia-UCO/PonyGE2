@@ -112,7 +112,8 @@ def f1_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    yhat = (yhat > 0)
+    if yhat.dtype != '<U2' and yhat.dtype != 'object': # Only if they are not string labels
+        yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
@@ -137,3 +138,110 @@ def Hamming_error(y, yhat):
 
 
 Hamming_error.maximise = False
+
+def precision_score(y, yhat):
+    """
+    The precision is the ratio tp / (tp + fp) where tp is 
+    the number of true positives and fp the number of false 
+    positives. The precision is intuitively the ability of 
+    the classifier not to label as positive a sample that 
+    is negative. The best value is 1 and the worst value is 0.
+    See: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html
+
+    :param y: The expected input (i.e. from dataset).
+    :param yhat: The given input (i.e. from phenotype).
+    :return The precision score.
+    """
+
+    # if phen is a constant, eg 0.001 (doesn't refer to x), then yhat
+    # will be a constant. that will break precision_score. so convert to a
+    # constant array.
+    if not isinstance(yhat, np.ndarray) or len(yhat.shape) < 1:
+        yhat = np.ones_like(y) * yhat
+
+    # Deal with possibility of {-1, 1} or {0, 1} class label
+    # convention.  FIXME: would it be better to canonicalise the
+    # convention elsewhere and/or create user parameter to control it?
+    # See https://github.com/PonyGE/PonyGE2/issues/113.
+    y_vals = set(y)
+
+    # convert from {-1, 1} to {0, 1}
+    if -1 in y_vals:
+        y[y == -1] = 0
+
+    # We binarize with a threshold, so this cannot be used for multi-class
+    assert len(y_vals) == 2
+
+    # convert real values to boolean {0, 1} with a zero threshold
+    yhat = (yhat > 0)
+
+    with warnings.catch_warnings():
+        # if we predict the same value for all samples (trivial
+        # individuals will do so as described above) then f-score is
+        # undefined, and sklearn will give a runtime warning and
+        # return 0. We can ignore that warning and happily return 0.
+        warnings.simplefilter("ignore")
+        return sklearn_precision_score(y, yhat, average="binary", zero_division=0)
+
+
+# Set maximise attribute for precision_score error metric.
+precision_score.maximise = True
+
+
+def recall_score(y, yhat):
+    """
+    The recall is the ratio tp / (tp + fn) where tp is 
+    the number of true positives and fn the number of false 
+    negatives. The recall is intuitively the ability of 
+    the classifier to find all the positive samples. The best 
+    value is 1 and the worst value is 0.
+    See: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html
+
+    :param y: The expected input (i.e. from dataset).
+    :param yhat: The given input (i.e. from phenotype).
+    :return The recall score.
+    """
+
+    # if phen is a constant, eg 0.001 (doesn't refer to x), then yhat
+    # will be a constant. that will break recall_score. so convert to a
+    # constant array.
+    if not isinstance(yhat, np.ndarray) or len(yhat.shape) < 1:
+        yhat = np.ones_like(y) * yhat
+
+    # Deal with possibility of {-1, 1} or {0, 1} class label
+    # convention.  FIXME: would it be better to canonicalise the
+    # convention elsewhere and/or create user parameter to control it?
+    # See https://github.com/PonyGE/PonyGE2/issues/113.
+    y_vals = set(y)
+    # convert from {-1, 1} to {0, 1}
+    if -1 in y_vals:
+        y[y == -1] = 0
+
+    # We binarize with a threshold, so this cannot be used for multi-class
+    assert len(y_vals) == 2
+
+    # convert real values to boolean {0, 1} with a zero threshold
+    yhat = (yhat > 0)
+
+    with warnings.catch_warnings():
+        # if we predict the same value for all samples (trivial
+        # individuals will do so as described above) then f-score is
+        # undefined, and sklearn will give a runtime warning and
+        # return 0. We can ignore that warning and happily return 0.
+        warnings.simplefilter("ignore")
+        return sklearn_recall_score(y, yhat, average="binary", zero_division=0)
+
+
+# Set maximise attribute for recall_score error metric.
+recall_score.maximise = True
+
+
+def precision_and_recall_score(y, yhat):
+    """
+    Compute the product (precision · recall)
+    """
+    return precision_score(y, yhat) * recall_score(y, yhat)
+
+
+# Set maximise attribute for precision_and_recall_score error metric.
+precision_and_recall_score.maximise = False
