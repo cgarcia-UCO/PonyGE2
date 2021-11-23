@@ -460,29 +460,30 @@ class Grammar(object):
             inputs = params['FITNESS_FUNCTION'].training_in
             first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
 
-            while first_feature < inputs.shape[1] and\
-                    (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
-                     not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
-                first_feature += 1
+            if first_feature is not None:
+                while first_feature < inputs.shape[1] and\
+                        (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
+                         not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
+                    first_feature += 1
 
-            if first_feature is not None and first_feature < inputs.shape[1]:
-                grammar_content.append('\n<GE_GENERATE:dataset_notin_conditions> ::= ')
-                # Go over the features of the dataset.
-                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
-                header = '(~np.isin(x.iloc[:,' if pandas_format else '(~np.isin(x[:,'
-                grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
-                for i in range(first_feature + 1, inputs.shape[1]):
-                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
-                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
-                        grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
+                if first_feature < inputs.shape[1]:
+                    grammar_content.append('\n<GE_GENERATE:dataset_notin_conditions> ::= ')
+                    # Go over the features of the dataset.
+                    # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                    header = '(~np.isin(x.iloc[:,' if pandas_format else '(~np.isin(x[:,'
+                    grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
+                    for i in range(first_feature + 1, inputs.shape[1]):
+                        if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                                params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                            grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
 
-                grammar_content.append('\n')
+                    grammar_content.append('\n')
 
-                for i in range(first_feature, inputs.shape[1]):
-                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
-                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
-                        self._generate_all_subsets(i, grammar_content)
-                        num_processed_features += 1
+                    for i in range(first_feature, inputs.shape[1]):
+                        if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                                params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                            self._generate_all_subsets(i, grammar_content)
+                            num_processed_features += 1
 
             self.ge_generate_tags['notin_processed_features'] = num_processed_features
 
@@ -511,29 +512,30 @@ class Grammar(object):
             inputs = params['FITNESS_FUNCTION'].training_in
             first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
 
-            while first_feature < inputs.shape[1] and\
-                    (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
-                     not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
-                first_feature += 1
+            if first_feature is not None:
+                while first_feature < inputs.shape[1] and\
+                        (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 2 or
+                         not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
+                    first_feature += 1
 
-            if first_feature is not None and first_feature < inputs.shape[1]:
-                grammar_content.append('\n<GE_GENERATE:dataset_inset_conditions> ::= ')
-                # Go over the features of the dataset.
-                # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
-                header = '(np.isin(x.iloc[:,' if pandas_format else 'np.isin(x[:,'
-                grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
-                for i in range(first_feature + 1, inputs.shape[1]):
-                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
-                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
-                        grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
+                if first_feature < inputs.shape[1]:
+                    grammar_content.append('\n<GE_GENERATE:dataset_inset_conditions> ::= ')
+                    # Go over the features of the dataset.
+                    # This code assumes params['FITNESS_FUNCTION'] is a supervised_learning.supervised_learning object
+                    header = '(np.isin(x.iloc[:,' if pandas_format else 'np.isin(x[:,'
+                    grammar_content.append(header + str(first_feature) + '], <subset_values_feature_' + str(first_feature) + '>))')
+                    for i in range(first_feature + 1, inputs.shape[1]):
+                        if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                                params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                            grammar_content.append(' | '+ header + str(i) + '], <subset_values_feature_' + str(i) + '>))')
 
-                grammar_content.append('\n')
+                    grammar_content.append('\n')
 
-                for i in range(first_feature, inputs.shape[1]):
-                    if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
-                            params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
-                        self._generate_all_subsets(i, grammar_content)
-                        num_processed_features += 1
+                    for i in range(first_feature, inputs.shape[1]):
+                        if params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                                params['FITNESS_FUNCTION'].num_of_different_values(i) > 2:
+                            self._generate_all_subsets(i, grammar_content)
+                            num_processed_features += 1
 
             self.ge_generate_tags['inset_processed_features'] = num_processed_features
 
