@@ -112,7 +112,7 @@ def f1_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    if yhat.dtype != '<U2' and yhat.dtype != 'object': # Only if they are not string labels
+    if issubclass(yhat.dtype.type, np.number): # Only if they are numbers (not string like 'Yes'/'No' o 'Positive'/'Negative'
         yhat = (yhat > 0)
 
     with warnings.catch_warnings():
