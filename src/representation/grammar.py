@@ -432,11 +432,12 @@ class Grammar(object):
             # append a new rule in the grammar with the shape
             # <GE_GENERATE:dataset_target_labels> ::= label_1 | label_2 | ...
             labels = np.unique(params['FITNESS_FUNCTION'].training_exp)
-            header_required_quotation = '' if np.isnan(labels).any() else '\"\'' # TODO tengo que corregir esto
-            tail_required_quotation = '' if np.isnan(labels).any() else '\'\"'
-            grammar_content.append('\n<GE_GENERATE:dataset_target_labels> ::= \"\'' + str(labels[0]) + '\'\"')
+            header_required_quotation = '' if issubclass(labels.dtype.type, np.number) else '\"\''
+            tail_required_quotation = '' if issubclass(labels.dtype.type, np.number) else '\'\"'
+            grammar_content.append('\n<GE_GENERATE:dataset_target_labels> ::= ' + header_required_quotation
+                                   + str(labels[0]) + tail_required_quotation)
             for j in labels[1:]:
-                grammar_content.append(' | \"\'' + str(j) + '\'\"')
+                grammar_content.append(' | ' + header_required_quotation + str(j) + tail_required_quotation)
             grammar_content.append('\n')
 
     def _generate_notin_conditions_rules(self, grammar_content):
