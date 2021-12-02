@@ -177,15 +177,17 @@ def precision_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    yhat = (yhat > 0)
+    #yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
-        # individuals will do so as described above) then f-score is
+        # individuals will do so as described above) then precision is
         # undefined, and sklearn will give a runtime warning and
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
-        return sklearn_precision_score(y, yhat, average="binary", zero_division=0)
+        p = sklearn_precision_score(y, yhat, average="binary", pos_label='Si')
+        print('Precision = ', p)
+        return p
 
 
 # Set maximise attribute for precision_score error metric.
@@ -225,15 +227,17 @@ def recall_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    yhat = (yhat > 0)
+    #yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
-        # individuals will do so as described above) then f-score is
+        # individuals will do so as described above) then recall is
         # undefined, and sklearn will give a runtime warning and
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
-        return sklearn_recall_score(y, yhat, average="binary", zero_division=0)
+        r = sklearn_recall_score(y, yhat, average="binary", pos_label='Si')
+        print('Recall = ', r)
+        return r
 
 
 # Set maximise attribute for recall_score error metric.
@@ -244,7 +248,12 @@ def precision_and_recall_score(y, yhat):
     """
     Compute the product (precision · recall)
     """
-    return precision_score(y, yhat) * recall_score(y, yhat)
+    p = precision_score(y, yhat)
+    r = recall_score(y, yhat)
+    k = p * r
+    print("Precision x Recall = ", k)
+    print()
+    return k
 
 
 # Set maximise attribute for precision_and_recall_score error metric.
