@@ -21,7 +21,7 @@ Precision x Recall =  0.4066006600660066
 
 Precision =  0.40633245382585753
 Recall =  1.0
-Precision x Recall =  0.40633245382585753
+Precision x Recall =  0.40633245382585753d
 
 Precision =  0.3959497206703911
 Recall =  0.9204545454545454
@@ -2003,7 +2003,8 @@ Precision =  0.379746835443038
 Recall =  0.19480519480519481
 Precision x Recall =  0.07397665625513727
 
-Evolution: 0% completePrecision =  0.0
+Evolution: 0% complete
+Precision =  0.0
 Recall =  0.0
 Precision x Recall =  0.0
 
@@ -3155,7 +3156,8 @@ Precision =  0.5
 Recall =  0.00487012987012987
 Precision x Recall =  0.002435064935064935
 
-Evolution: 9% completePrecision =  0.39783393501805053
+Evolution: 9% complete
+Precision =  0.39783393501805053
 Recall =  0.8944805194805194
 Precision x Recall =  0.35585470486192505
 
@@ -4455,7 +4457,8 @@ Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
-Evolution: 18% completePrecision =  0.40633245382585753
+Evolution: 18% complete
+Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
@@ -5671,7 +5674,8 @@ Precision =  0.0
 Recall =  0.0
 Precision x Recall =  0.0
 
-Evolution: 27% completePrecision =  0.0
+Evolution: 27% complete
+Precision =  0.0
 Recall =  0.0
 Precision x Recall =  0.0
 
@@ -6855,7 +6859,8 @@ Precision =  0.42375168690958165
 Recall =  0.5097402597402597
 Precision x Recall =  0.21600329495066337
 
-Evolution: 36% completePrecision =  0.40633245382585753
+Evolution: 36% complete
+Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
@@ -8087,7 +8092,8 @@ Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
-Evolution: 45% completePrecision =  0.433
+Evolution: 45% complete
+Precision =  0.433
 Recall =  0.702922077922078
 Precision x Recall =  0.30436525974025974
 
@@ -9443,7 +9449,8 @@ Precision =  0.4066225165562914
 Recall =  0.9967532467532467
 Precision x Recall =  0.40530231358045926
 
-Evolution: 54% completePrecision =  0.416
+Evolution: 54% complete
+Precision =  0.416
 Recall =  0.08441558441558442
 Precision x Recall =  0.035116883116883116
 
@@ -10855,7 +10862,8 @@ Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
-Evolution: 63% completePrecision =  0.5714285714285714
+Evolution: 63% complete
+Precision =  0.5714285714285714
 Recall =  0.01948051948051948
 Precision x Recall =  0.011131725417439703
 
@@ -12211,7 +12219,8 @@ Precision =  0.0
 Recall =  0.0
 Precision x Recall =  0.0
 
-Evolution: 72% completePrecision =  0.4444444444444444
+Evolution: 72% complete
+Precision =  0.4444444444444444
 Recall =  0.22727272727272727
 Precision x Recall =  0.101010101010101
 
@@ -13547,7 +13556,8 @@ Precision =  0.40633245382585753
 Recall =  1.0
 Precision x Recall =  0.40633245382585753
 
-Evolution: 81% completePrecision =  0.0
+Evolution: 81% complete
+Precision =  0.0
 Recall =  0.0
 Precision x Recall =  0.0
 
@@ -14807,7 +14817,8 @@ Precision =  0.42907801418439717
 Recall =  0.39285714285714285
 Precision x Recall =  0.16856636271529887
 
-Evolution: 90% completeEvolution: 90% complete
+Evolution: 90% complete
+Evolution: 90% complete
 
 Best:
   Fitness:	 0.0
