@@ -257,6 +257,10 @@ class Grammar(object):
                                             "recursive": False,
                                             "NT_kids": False})
 
+                assert len(tmp_productions) <= self.codon_size, 'There is a rule with ' + str(len(tmp_productions)) + \
+                       ' productions, when the maximum is ' + str(self.codon_size) + \
+                       '. You may want to specify a larger CODON_SIZE parameter value.'
+
                 if not rule.group('rulename') in self.rules:
                     # Add new production rule to the rules dictionary if not
                     # already there.
