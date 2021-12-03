@@ -257,4 +257,4 @@ def precision_and_recall_score(y, yhat):
 
 
 # Set maximise attribute for precision_and_recall_score error metric.
-precision_and_recall_score.maximise = False
+precision_and_recall_score.maximise = True
