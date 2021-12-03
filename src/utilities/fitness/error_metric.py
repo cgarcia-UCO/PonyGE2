@@ -186,7 +186,7 @@ def precision_score(y, yhat):
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
         p = sklearn_precision_score(y, yhat, average="binary", pos_label='Si')
-        print('Precision = ', p)
+        # print('Precision = ', p)
         return p
 
 
@@ -236,7 +236,7 @@ def recall_score(y, yhat):
         # return 0. We can ignore that warning and happily return 0.
         warnings.simplefilter("ignore")
         r = sklearn_recall_score(y, yhat, average="binary", pos_label='Si')
-        print('Recall = ', r)
+        # print('Recall = ', r)
         return r
 
 
@@ -251,8 +251,8 @@ def precision_and_recall_score(y, yhat):
     p = precision_score(y, yhat)
     r = recall_score(y, yhat)
     k = p * r
-    print("Precision x Recall = ", k)
-    print()
+    # print("Precision x Recall = ", k)
+    # print()
     return k
 
 
