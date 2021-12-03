@@ -1,6 +1,6 @@
 from itertools import chain, combinations
 
-def get_all_groups(collection, min_size=2, max_size=8):
+def get_subsets(collection, min_size=2, max_size=8):
     """
     Return all the subsets of values in collection with sizes between min_size and max_size
 

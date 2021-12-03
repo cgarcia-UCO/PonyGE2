@@ -7,7 +7,7 @@ import pandas as pd
 
 from algorithm.parameters import params
 from utilities.misc.readappend_StringIO import ReadAppend_StringIO
-from utilities.misc.set_partition import get_all_groups
+from utilities.misc.set_partition import get_subsets
 
 
 class Grammar(object):
@@ -303,7 +303,7 @@ class Grammar(object):
                 raise Exception('Training dataset is not a Numpy.ndarray'
                                 ' nor a pandas.DataFrame: ' + type(self.training_in))
 
-            values = list(get_all_groups(list(values)))
+            values = list(get_subsets(list(values)))
             header_required_quotation = '\"'
             tail_required_quotation = '\"'
 
