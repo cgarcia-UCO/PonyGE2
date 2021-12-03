@@ -7,7 +7,7 @@ import pandas as pd
 
 from algorithm.parameters import params
 from utilities.misc.readappend_StringIO import ReadAppend_StringIO
-from utilities.misc.set_partition import get_subsets
+from utilities.misc.get_subsets import get_subsets
 
 
 class Grammar(object):
