@@ -7,7 +7,7 @@ import pandas as pd
 
 from algorithm.parameters import params
 from utilities.misc.readappend_StringIO import ReadAppend_StringIO
-from utilities.misc.set_partition import get_all_groups
+from utilities.misc.get_subsets import get_subsets
 
 
 class Grammar(object):
@@ -257,6 +257,10 @@ class Grammar(object):
                                             "recursive": False,
                                             "NT_kids": False})
 
+                assert len(tmp_productions) <= self.codon_size, 'There is a rule with ' + str(len(tmp_productions)) + \
+                       ' productions, when the maximum is ' + str(self.codon_size) + \
+                       '. You may want to specify a larger CODON_SIZE parameter value.'
+
                 if not rule.group('rulename') in self.rules:
                     # Add new production rule to the rules dictionary if not
                     # already there.
@@ -303,7 +307,7 @@ class Grammar(object):
                 raise Exception('Training dataset is not a Numpy.ndarray'
                                 ' nor a pandas.DataFrame: ' + type(self.training_in))
 
-            values = list(get_all_groups(list(values)))
+            values = list(get_subsets(list(values)))
             header_required_quotation = '\"'
             tail_required_quotation = '\"'
 
