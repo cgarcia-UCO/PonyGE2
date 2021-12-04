@@ -2,12 +2,12 @@ CACHE:                  True
 CODON_SIZE:             100000
 CROSSOVER:              variable_onepoint
 CROSSOVER_PROBABILITY:  0.75
-DATASET_TRAIN:          
-DATASET_TEST:           
+DATASET_TRAIN:          data.arff
+DATASET_TEST:           data.arff
 DEBUG:                  False
 ELITE_SIZE:				50
 ERROR_METRIC:           precision_and_recall_score
-GENERATIONS:            10
+GENERATIONS:            5
 MAX_GENOME_LENGTH:      500
 GRAMMAR_FILE:           supervised_learning/if_else_classifier_heterogeneous_data.bnf
 INITIALISATION:         PI_grow
