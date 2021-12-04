@@ -86,7 +86,7 @@ def get_soo_stats(individuals, end):
     """
 
     # Get best individual.
-    best = max(individuals) # Hacer lo de la elite.
+    best = max(individuals)
 
     if not trackers.best_ever or best > trackers.best_ever:
         # Save best individual in trackers.best_ever.
@@ -146,6 +146,11 @@ def get_soo_stats(individuals, end):
 
     if end and not params['SILENT']:
         print_final_stats()
+
+    # Get the best 'params['ELITE_SIZE']' individuals of the population.
+    if end and params['ELITE_SIZE'] != None:
+        if params['ELITE_SIZE'] > 1:
+            get_elite(individuals, params['ELITE_SIZE'])
 
 
 def get_moo_stats(individuals, end):
@@ -289,9 +294,9 @@ def update_stats(individuals, end):
         # Time Stats
         trackers.time_list.append(time() - stats['time_adjust'])
         stats['time_taken'] = trackers.time_list[-1] - \
-                              trackers.time_list[-2]
+            trackers.time_list[-2]
         stats['total_time'] = trackers.time_list[-1] - \
-                              trackers.time_list[0]
+            trackers.time_list[0]
 
     # Population Stats
     stats['total_inds'] = params['POPULATION_SIZE'] * (stats['gen'] + 1)
@@ -299,7 +304,7 @@ def update_stats(individuals, end):
     if params['CACHE']:
         stats['unique_inds'] = len(trackers.cache)
         stats['unused_search'] = 100 - stats['unique_inds'] / \
-                                 stats['total_inds'] * 100
+            stats['total_inds'] * 100
 
     # Genome Stats
     genome_lengths = [len(i.genome) for i in individuals]
@@ -388,3 +393,30 @@ def print_final_moo_stats():
     for ind in trackers.best_ever:
         print(" ", ind)
     print_generation_stats()
+
+
+def get_elite(individuals, elite_size):
+    """
+    Prints the final elite of the evolutionary process.
+
+        Parameters
+        ----------
+        individuals: list
+                Individuals of the final population.
+        elite_size: integer
+                Size of the elite (Preselected in parameters as 'ELITE_SIZE').
+
+        Returns
+        -------
+        Nothing.
+    """
+    print("Elite:\n Elite size:\t", elite_size)
+    print()
+    individuals.sort(reverse=True)
+
+    for i in range(elite_size):
+        print(f" Element {i}: ")
+        print("  Fitness:\t", individuals[i].fitness)
+        print("  Phenotype:\t", individuals[i].phenotype)
+        print("  Genome:\t", individuals[i].genome)
+        print()
