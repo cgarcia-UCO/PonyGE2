@@ -136,7 +136,6 @@ def get_data(train, test):
         # There is no testing dataset used.
         test_set = None
 
-    # Arff support just for train set.
     if train_set.endswith('.arff'):
         test_in, test_out = None, None
         training_in, training_out = read_arff(train_set)
