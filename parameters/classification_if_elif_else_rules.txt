@@ -5,9 +5,9 @@ CROSSOVER_PROBABILITY:  0.75
 DATASET_TRAIN:          data.arff
 DATASET_TEST:           data.arff
 DEBUG:                  False
-ELITE_SIZE:				50
+ELITE_SIZE:				      50
 ERROR_METRIC:           precision_and_recall_score
-GENERATIONS:            5  #TODO cambiar
+GENERATIONS:            5
 MAX_GENOME_LENGTH:      500
 GRAMMAR_FILE:           supervised_learning/if_else_classifier_heterogeneous_data.bnf
 INITIALISATION:         PI_grow
@@ -20,4 +20,4 @@ FITNESS_FUNCTION:       supervised_learning.classification
 REPLACEMENT:            generational
 SELECTION:              tournament
 TOURNAMENT_SIZE:        2
-VERBOSE: 				False
+VERBOSE: 				        False
