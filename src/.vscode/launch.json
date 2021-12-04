@@ -12,7 +12,7 @@
 			"console": "integratedTerminal",
 			"args": [
 				"--parameters",
-				"classification_if_elif_else_rules.txt"
+				"association_rules.txt"
 			]
 		}
 	]
