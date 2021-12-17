@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
+
 np.seterr(all="raise")
 
 from algorithm.parameters import params
@@ -42,55 +44,6 @@ class supervised_learning(base_ff):
         if params['DATASET_TEST']:
             self.training_test = True
 
-    def get_antecedente_consecuente(self,cadena):
-
-        i = 0
-        parentesis = 0
-
-        while i < len(cadena) and (cadena[i] != ',' or parentesis != 0):
-            if cadena[i] == '(':
-                parentesis += 1
-            elif cadena[i] == ')':
-                parentesis -= 1
-
-            i += 1
-
-        return cadena[:i], cadena[i + 1:]
-
-    def get_rules(self,phenotype):
-
-        subcadenas = phenotype.split('np.where(')
-        result = []
-        current_antecedent = []
-        num_usos = []
-
-        for i in subcadenas:
-            antecedente, consecuente = self.get_antecedente_consecuente(i)
-            # current_antecedent.append(' & ')
-            current_antecedent.append(antecedente)
-            num_usos.append(0)
-
-            if consecuente.strip() != '':
-                for j in consecuente.split(','):
-                    if len(j.strip()) > 0:
-                        result.append(" & ".join(current_antecedent)[3:])# + " => " + j)
-
-                        if num_usos[-1] == 0:
-                            ultima_condicion = current_antecedent.pop()
-                            current_antecedent.append('~(' + ultima_condicion + ')')
-                            num_usos[-1] = 1
-                        else:
-
-                            while num_usos[-1] > 0:
-                                current_antecedent.pop()
-                                num_usos.pop()
-
-                            ultima_condicion = current_antecedent.pop()
-                            current_antecedent.append('~(' + ultima_condicion + ')')
-                            num_usos[-1] = 1
-
-        return result
-
     def evaluate(self, ind, **kwargs):
         """
         Note that math functions used in the solutions are imported from either
@@ -118,8 +71,8 @@ class supervised_learning(base_ff):
         else:
             raise ValueError("Unknown dist: " + dist)
 
-        rules = self.get_rules(ind.phenotype)
-        aux = x[eva(rules[0])] # todo VENTURA recorrer las reglas y calcular las probabilidades de Sí y No para calcular Gini
+        rules = nested_conds_2_rules_list(ind.phenotype)
+        aux = x[eval(rules[0])] # todo VENTURA recorrer las reglas y calcular las probabilidades de Sí y No para calcular Gini
         labels = y[eval(rules[0])]
 
         shape_mismatch_txt = """Shape mismatch between y and yhat. Please check
