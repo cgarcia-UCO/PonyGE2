@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
+
 np.seterr(all="raise")
 
 from algorithm.parameters import params
@@ -68,6 +70,10 @@ class supervised_learning(base_ff):
 
         else:
             raise ValueError("Unknown dist: " + dist)
+
+        rules = nested_conds_2_rules_list(ind.phenotype)
+        aux = x[eval(rules[0])] # todo VENTURA recorrer las reglas y calcular las probabilidades de Sí y No para calcular Gini
+        labels = y[eval(rules[0])]
 
         shape_mismatch_txt = """Shape mismatch between y and yhat. Please check
 that your grammar uses the `x[:, 0]` style, not `x[0]`. Please see change
