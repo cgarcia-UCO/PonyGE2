@@ -13,6 +13,8 @@ def get_gini(probabilities):
         Gini index
     """
 
+    assert sum(probabilities) == 1.0, 'The sum of probabilities must be 1.'
+
     summation = 0
     for p_i in probabilities:
         summation += (p_i ** 2)
