@@ -5,7 +5,7 @@ from utilities.fitness.get_data import get_data
 from algorithm.parameters import params
 import numpy as np
 import pandas as pd
-from utilities.misc.get_yes_no_probabilities import get_yes_no_prob
+from utilities.misc.get_labels_probabilities import get_labels_prob
 from utilities.misc.get_gini import get_gini
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
@@ -75,10 +75,11 @@ class supervised_learning(base_ff):
         aux = x[eval(rules[0])]
         labels = y[eval(rules[0])]
 
-        # TODO: VENTURA recorrer las reglas y calcular las probabilidades de Sí y No para calcular Gini.
-        labels_size = labels.count()
-        probabilities = get_yes_no_prob(labels, labels_size)
-        G = get_gini(probabilities)
+        # Get labels probabilities.
+        probabilities = get_labels_prob(labels)
+
+        # Get Gini index.
+        G = get_gini(probabilities.values())
         print(f'Gini index = {G}')
 
         shape_mismatch_txt = """Shape mismatch between y and yhat. Please check
