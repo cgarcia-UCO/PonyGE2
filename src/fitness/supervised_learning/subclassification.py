@@ -56,7 +56,7 @@ class subclassification(classification):
         # Get labels probabilities.
         probabilities = get_labels_prob(labels)
 
-        # TODO: Maybe compute Gini-Simpson index instead of Gini index.
+        # TODO: Maybe compute Gini-Simpson index instead of Gini index: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4954803/
         # Get Gini index.
         G = get_gini(probabilities.values())
 
