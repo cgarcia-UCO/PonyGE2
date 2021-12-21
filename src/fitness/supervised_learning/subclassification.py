@@ -56,8 +56,8 @@ class subclassification(classification):
         # Get labels probabilities.
         probabilities = get_labels_prob(labels)
 
+        # TODO: Maybe compute Gini-Simpson index instead of Gini index.
         # Get Gini index.
         G = get_gini(probabilities.values())
-        #print(f'Gini index = {G}')
 
         return G
