@@ -6,7 +6,6 @@ from algorithm.parameters import params
 import numpy as np
 import pandas as pd
 from utilities.misc.get_labels_probabilities import get_labels_prob
-from utilities.misc.get_gini import get_gini
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
 np.seterr(all="raise")
@@ -77,10 +76,6 @@ class supervised_learning(base_ff):
 
         # Get labels probabilities.
         probabilities = get_labels_prob(labels)
-
-        # Get Gini index.
-        G = get_gini(probabilities.values())
-        print(f'Gini index = {G}')
 
         shape_mismatch_txt = """Shape mismatch between y and yhat. Please check
 that your grammar uses the `x[:, 0]` style, not `x[0]`. Please see change

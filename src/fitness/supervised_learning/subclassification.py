@@ -1,10 +1,11 @@
+from re import L
 import numpy as np
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
-from utilities.misc.get_gini import get_gini
+from utilities.misc.get_gini import get_weighted_gini_index
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
 
@@ -58,7 +59,7 @@ class subclassification(classification):
         labels = y[eval(rules[0])]
 
         # Get labels probabilities.
-        probabilities = get_labels_prob(labels)
+        probabilities, n_labels = get_labels_prob(labels)
 
         # Get Gini index.
-        return get_gini(probabilities.values())
+        return get_weighted_gini_index(probabilities.values(), n_labels.values())
