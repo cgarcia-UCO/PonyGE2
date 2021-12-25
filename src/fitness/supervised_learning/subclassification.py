@@ -50,14 +50,15 @@ class subclassification(classification):
 
         rules = nested_conds_2_rules_list(ind.phenotype)
 
+        if ind.invalid == True or rules == []:
+            # Return 'np.nan' if the individual is invalid or there are no rules to analyse.
+            return np.nan
+
         aux = x[eval(rules[0])]
         labels = y[eval(rules[0])]
 
         # Get labels probabilities.
         probabilities = get_labels_prob(labels)
 
-        # TODO: Maybe compute Gini-Simpson index instead of Gini index: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4954803/
         # Get Gini index.
-        G = get_gini(probabilities.values())
-
-        return G
+        return get_gini(probabilities.values())
