@@ -2,6 +2,7 @@ from re import L
 import numpy as np
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
+from utilities.fitness.assoc_rules_measures import compute_precision, compute_recall, compute_lift, compute_leverage, compute_conviction
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
@@ -55,11 +56,17 @@ class subclassification(classification):
             # Return 'np.nan' if the individual is invalid or there are no rules to analyse.
             return np.nan
 
+        # FIXME: Revisar si esto está correcto únicamente para el índice 0 o en para todos.
+        # Creo debería de ser para todos si las reglas no son de "si/no": for rule in rules...
+        n_records = len(x)
         aux = x[eval(rules[0])]
         labels = y[eval(rules[0])]
 
         # Get labels probabilities.
         probabilities, n_labels = get_labels_prob(labels)
+
+        rule_support = len(aux) / n_records
+        # compute_conviction(rule_support)
 
         # Get Gini index.
         return get_weighted_gini_index(probabilities.values(), n_labels.values())
