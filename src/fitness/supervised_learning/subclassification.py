@@ -2,7 +2,7 @@ from re import L
 import numpy as np
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
-from utilities.fitness.assoc_rules_measures import compute_precision, compute_recall, compute_lift, compute_leverage, compute_conviction
+#from utilities.fitness.assoc_rules_measures import compute_precision, compute_recall, compute_lift, compute_leverage, compute_conviction
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
@@ -50,23 +50,35 @@ class subclassification(classification):
         else:
             raise ValueError("Unknown dist: " + dist)
 
-        rules = nested_conds_2_rules_list(ind.phenotype)
+        rules, consecuents = nested_conds_2_rules_list(ind.phenotype)
 
         if ind.invalid == True or rules == []:
             # Return 'np.nan' if the individual is invalid or there are no rules to analyse.
             return np.nan
 
-        # FIXME: Revisar si esto está correcto únicamente para el índice 0 o en para todos.
-        # Creo debería de ser para todos si las reglas no son de "si/no": for rule in rules...
         n_records = len(x)
+
+        # FIXME: Hacerlo genérico for rule in rules:...
         aux = x[eval(rules[0])]
         labels = y[eval(rules[0])]
+
+        # Antecedent: Number of True elementes in 'x':
+        # FIXME: De vez en cuando se obtiene un error en la siguiente línea.
+        # FIXME: Hacerlo genérico for rule in rules:...
+        true_values_indexes = [index for index, value in enumerate(
+            eval(rules[0]).values) if value == True]
+        #true_values = np.count_nonzero(eval(rules[0]).values)
+
+        # Consecuent that satisfies antecedent (intersection A and C):
+        # FIXME: Hacerlo genérico for rule in rules:...
+        intersec_antec_consec = [index for index, value in enumerate(
+            true_values_indexes) if y.values[value] == consecuents[0]]
 
         # Get labels probabilities.
         probabilities, n_labels = get_labels_prob(labels)
 
-        rule_support = len(aux) / n_records
-        # compute_conviction(rule_support)
+        #rule_support = len(aux) / n_records
+        rule_support = len(intersec_antec_consec) / n_records
 
         # Get Gini index.
         return get_weighted_gini_index(probabilities.values(), n_labels.values())

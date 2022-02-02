@@ -1,3 +1,6 @@
+import re
+
+
 def divide_ant_cons(string):
     """
     This function divides a string by the first ',' not in any set of parenthesis.
@@ -19,7 +22,22 @@ def divide_ant_cons(string):
 
     return string[:i], string[i + 1:]
 
-def nested_conds_2_rules_list(strig):
+
+def extract_consecuent(string):
+    """
+    This function extract a list with the consecuents of an association rule.
+
+    :param string: unprocessed string with the consecuents.
+    :return: list with the consecuents.
+
+        Example:
+            consecuent = " 'Si', 'No')"
+            returned value = ['Si', 'No']
+    """
+    return re.findall("'([^']*)'", string)
+
+
+def nested_conds_2_rules_list(string):
     """
     This function processes a string with nested constructions of the form: 'np.where(....,....,...)',
     and returns a list with the conjunction of the conditions that precedes any leaf decision
@@ -34,7 +52,7 @@ def nested_conds_2_rules_list(strig):
             "~((x.iloc[:,3] < 3) & (x.iloc[:,2] != 'Yes')) & ~(x.iloc[:,1] > 0)"
             ]
     """
-    substrings = strig.split('np.where(')
+    substrings = string.split('np.where(')
     result = []
     current_antecedent = []
     num_uses = []
@@ -47,7 +65,8 @@ def nested_conds_2_rules_list(strig):
         if consecuent.strip() != '':
             for j in consecuent.split(','):
                 if len(j.strip()) > 0:
-                    result.append(" & ".join(current_antecedent)[3:])# + " => " + j)
+                    # + " => " + j)
+                    result.append(" & ".join(current_antecedent)[3:])
 
                     if num_uses[-1] == 0:
                         last_condition = current_antecedent.pop()
@@ -63,5 +82,4 @@ def nested_conds_2_rules_list(strig):
                         current_antecedent.append('~(' + last_condition + ')')
                         num_uses[-1] = 1
 
-    return result
-
+    return result, extract_consecuent(consecuent)
