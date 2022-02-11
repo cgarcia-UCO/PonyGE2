@@ -1,11 +1,12 @@
 from re import L
 import numpy as np
+import pandas as pd
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
-#from utilities.fitness.assoc_rules_measures import compute_precision, compute_recall, compute_lift, compute_leverage, compute_conviction
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
+from utilities.fitness.assoc_rules_measures import get_metrics
 from utilities.misc.get_gini import get_weighted_gini_index
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
@@ -56,29 +57,20 @@ class subclassification(classification):
             # Return 'np.nan' if the individual is invalid or there are no rules to analyse.
             return np.nan
 
-        n_records = len(x)
-
         # FIXME: Hacerlo genérico for rule in rules:...
         aux = x[eval(rules[0])]
         labels = y[eval(rules[0])]
 
-        # Antecedent: Number of True elementes in 'x':
-        # FIXME: De vez en cuando se obtiene un error en la siguiente línea.
-        # FIXME: Hacerlo genérico for rule in rules:...
-        true_values_indexes = [index for index, value in enumerate(
-            eval(rules[0]).values) if value == True]
-        #true_values = np.count_nonzero(eval(rules[0]).values)
+        X = eval(rules[0]).tolist()
 
-        # Consecuent that satisfies antecedent (intersection A and C):
-        # FIXME: Hacerlo genérico for rule in rules:...
-        intersec_antec_consec = [index for index, value in enumerate(
-            true_values_indexes) if y.values[value] == consecuents[0]]
+        df = pd.DataFrame(y.tolist())
+        # Encoder: Para calcular tanto precision como recall.
+        y_encoded = df[0].map({'Si': 1, 'No': 0}).tolist()
+
+        get_metrics(X, y_encoded)
 
         # Get labels probabilities.
         probabilities, n_labels = get_labels_prob(labels)
-
-        #rule_support = len(aux) / n_records
-        rule_support = len(intersec_antec_consec) / n_records
 
         # Get Gini index.
         return get_weighted_gini_index(probabilities.values(), n_labels.values())
