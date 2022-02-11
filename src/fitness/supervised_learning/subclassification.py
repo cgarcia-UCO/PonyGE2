@@ -6,7 +6,6 @@ from fitness.supervised_learning.classification import classification
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
-from utilities.fitness.assoc_rules_measures import get_metrics
 from utilities.misc.get_gini import get_weighted_gini_index
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
@@ -64,7 +63,7 @@ class subclassification(classification):
         X = eval(rules[0]).tolist()
 
         df = pd.DataFrame(y.tolist())
-        # Encoder: Para calcular tanto precision como recall.
+
         y_encoded = df[0].map({'Si': 1, 'No': 0}).tolist()
 
         get_metrics(X, y_encoded)
