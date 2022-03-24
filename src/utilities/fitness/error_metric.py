@@ -2,8 +2,6 @@ import warnings
 
 import numpy as np
 from sklearn.metrics import f1_score as sklearn_f1_score
-from sklearn.metrics import precision_score as sklearn_precision_score
-from sklearn.metrics import recall_score as sklearn_recall_score
 
 
 def mae(y, yhat):
@@ -114,9 +112,7 @@ def f1_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    # Only if they are numbers (not string like 'Yes'/'No' o 'Positive'/'Negative'
-    if issubclass(yhat.dtype.type, np.number):
-        yhat = (yhat > 0)
+    yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
