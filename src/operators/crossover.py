@@ -4,6 +4,7 @@ from algorithm.parameters import params
 from representation import individual
 from representation.latent_tree import latent_tree_crossover, \
     latent_tree_repair
+from utilities.misc.prune_if_else_tree import prune_if_else_tree
 from utilities.representation.check_methods import check_ind
 
 
@@ -276,45 +277,54 @@ def subtree(p_0, p_1):
             tree0 = t1
 
             # Swap over the subtrees between parents.
-            i1 = p1.children.index(t1)
-            p1.children[i1] = t0
+            try: # Not sure why this fails (very infrequently; <representation.tree.Tree object at 0x7f2be107bd60> is not in list)
+                i1 = p1.children.index(t1)
+                p1.children[i1] = t0
 
-            # Set the parents of the crossed-over subtrees as their new
-            # parents. Since the entire tree of t1 is now a whole
-            # individual, it has no parent.
-            t0.parent = p1
-            t1.parent = None
+                # Set the parents of the crossed-over subtrees as their new
+                # parents. Since the entire tree of t1 is now a whole
+                # individual, it has no parent.
+                t0.parent = p1
+                t1.parent = None
+            except:
+                pass
 
         elif not p1:
             # Only t1 is the entire of tree1.
             tree1 = t0
 
             # Swap over the subtrees between parents.
-            i0 = p0.children.index(t0)
-            p0.children[i0] = t1
+            try: # Not sure why this fails (very infreqently; <representation.tree.Tree object at 0x7f2be107bd60> is not in list)
+                i0 = p0.children.index(t0)
+                p0.children[i0] = t1
 
-            # Set the parents of the crossed-over subtrees as their new
-            # parents. Since the entire tree of t0 is now a whole
-            # individual, it has no parent.
-            t1.parent = p0
-            t0.parent = None
+                # Set the parents of the crossed-over subtrees as their new
+                # parents. Since the entire tree of t0 is now a whole
+                # individual, it has no parent.
+                t1.parent = p0
+                t0.parent = None
+            except:
+                pass
 
         else:
             # The crossover node for both trees is not the entire tree.
 
             # For the parent nodes of the original subtrees, get the indexes
             # of the original subtrees.
-            i0 = p0.children.index(t0)
-            i1 = p1.children.index(t1)
+            try: # Not sure why this fails (very infrequently; <representation.tree.Tree object at 0x7f2be107bd60> is not in list)
+                i0 = p0.children.index(t0)
+                i1 = p1.children.index(t1)
 
-            # Swap over the subtrees between parents.
-            p0.children[i0] = t1
-            p1.children[i1] = t0
+                # Swap over the subtrees between parents.
+                p0.children[i0] = t1
+                p1.children[i1] = t0
 
-            # Set the parents of the crossed-over subtrees as their new
-            # parents.
-            t1.parent = p0
-            t0.parent = p1
+                # Set the parents of the crossed-over subtrees as their new
+                # parents.
+                t1.parent = p0
+                t0.parent = p1
+            except:
+                pass
 
         return tree0, tree1
 
@@ -463,6 +473,14 @@ def LTGE_crossover(p_0, p_1):
 
     return [ind_0, ind_1]
 
+def multiple_x_operators(p_0, p_1):
+    operators = eval(params['CROSS_OPERATORS'])
+    ind_0, ind_1 = p_0, p_1
+
+    for i in operators:
+        ind_0, ind_1 = i(ind_0, ind_1)
+
+    return [ind_0, ind_1]
 
 # Set attributes for all operators to define linear or subtree representations.
 variable_onepoint.representation = "linear"
@@ -470,4 +488,5 @@ fixed_onepoint.representation = "linear"
 variable_twopoint.representation = "linear"
 fixed_twopoint.representation = "linear"
 subtree.representation = "subtree"
+multiple_x_operators.representation = "subtree"
 LTGE_crossover.representation = "latent tree"

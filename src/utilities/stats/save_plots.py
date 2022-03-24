@@ -41,8 +41,20 @@ def save_pareto_fitness_plot():
         ax1.plot(gen[0], gen[1], 'o', color=c, ms=1)
 
     # Set labels with class names.
-    ax1.set_xlabel(ffs[0].__class__.__name__, fontsize=14)
-    ax1.set_ylabel(ffs[1].__class__.__name__, fontsize=14)
+    try:
+        #This is for objective function functions
+        xlabel = ffs[0].__name__
+    except:
+        #This is for objective function classes
+        xlabel = ffs[0].__class__.__name__
+
+    try:
+        ylabel = ffs[1].__name__
+    except:
+        ylabel = ffs[1].__class__.__name__
+
+    ax1.set_xlabel(xlabel, fontsize=14)
+    ax1.set_ylabel(ylabel, fontsize=14)
 
     # Plot title and legend.
     plt.title("First pareto fronts by generation")
@@ -67,7 +79,7 @@ def save_pareto_fitness_plot():
     plt.close()
 
 
-def save_plot_from_data(data, name):
+def save_plot_from_data(data, name, label=[]):
     """
     Saves a plot of a given set of data.
 
@@ -83,7 +95,7 @@ def save_plot_from_data(data, name):
     ax1 = fig.add_subplot(1, 1, 1)
 
     # Plot data.
-    ax1.plot(data)
+    ax1.plot(data, label=label)
 
     # Set labels.
     ax1.set_ylabel(name, fontsize=14)
@@ -91,6 +103,7 @@ def save_plot_from_data(data, name):
 
     # Plot title.
     plt.title(name)
+    plt.legend()
 
     # Save plot and close.
     plt.savefig(path.join(params['FILE_PATH'], (name + '.pdf')))

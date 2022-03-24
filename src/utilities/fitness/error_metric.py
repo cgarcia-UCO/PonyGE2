@@ -112,7 +112,9 @@ def f1_score(y, yhat):
     assert len(y_vals) == 2
 
     # convert real values to boolean {0, 1} with a zero threshold
-    yhat = (yhat > 0)
+    # Only if they are numbers (not string like 'Yes'/'No' o 'Positive'/'Negative'
+    if issubclass(yhat.dtype.type, np.number):
+        yhat = (yhat > 0)
 
     with warnings.catch_warnings():
         # if we predict the same value for all samples (trivial
@@ -137,3 +139,8 @@ def Hamming_error(y, yhat):
 
 
 Hamming_error.maximise = False
+
+def accuracy(y, yhat):
+    return (np.sum(y == yhat) / len(y))
+
+accuracy.maximise = True

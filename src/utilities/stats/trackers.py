@@ -27,3 +27,6 @@ stats_list = []
 
 best_ever = None
 # Store the best ever individual here.
+
+aux = {}
+# Auxiliar variable for personal things

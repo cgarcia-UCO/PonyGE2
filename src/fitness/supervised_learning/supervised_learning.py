@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 np.seterr(all="raise")
 
@@ -31,14 +32,14 @@ class supervised_learning(base_ff):
         super().__init__()
 
         # Get training and test data
-        self.training_in, self.training_exp, self.test_in, self.test_exp = \
+        self.training_in, self.training_exp, self.test_in, self.test_exp,_ = \
             get_data(params['DATASET_TRAIN'], params['DATASET_TEST'])
 
         # Find number of variables.
         self.n_vars = np.shape(self.training_in)[1] # sklearn convention
 
         # Regression/classification-style problems use training and test data.
-        if params['DATASET_TEST']:
+        if params['DATASET_TEST'] is not None:
             self.training_test = True
 
     def evaluate(self, ind, **kwargs):
@@ -100,7 +101,13 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
 
         else:
             # phenotype won't refer to C
-            yhat = eval(ind.phenotype)
+            try: # I do not why, but in some cases, very infrequently, I had an invalid phenotype. In particular, in one case it tried to test the condition (x['<feature_name>%] > 1.7), which misses a quote
+                yhat = eval(ind.phenotype)
+            except:
+                if isinstance(params['ERROR_METRIC'], list):
+                    return [None for i in params['ERROR_METRIC']]
+                else:
+                    return None
             assert np.isrealobj(yhat)
             # Phenotypes that don't refer to x are constants, ie will
             # return a single value (not an array). That will work
@@ -116,3 +123,82 @@ at https://github.com/PonyGE/PonyGE2/issues/130."""
             # let's always call the error function with the true
             # values first, the estimate second
             return params['ERROR_METRIC'](y, yhat)
+
+    def num_of_different_values(self, i):
+        """
+        Return the number of different values in the i-th feature of the dataset
+
+        :param i: index of the feature for which the number of different values is required
+        :return: Number of different values in the i-th feature of the dataset
+        """
+        if isinstance(self.training_in, pd.DataFrame):
+            values = self.training_in.iloc[:,i]
+            values = values[values.notna()]
+            return len(np.unique(values))
+        elif isinstance(self.training_in, np.ndarray):
+            return len(np.unique(self.training_in[:, i]))
+        else:
+            raise Exception('Training dataset is not a Numpy.ndarray nor a pandas.DataFrame: ' + type(self.training_in))
+
+
+    def is_ithfeature_categorical(self, i, max_different_values = 10):
+        """
+        Return True if the ith feature in the dataset is categorical.
+
+        In case that self.training_in is a pandas DataFrame, a feature is considered categorical
+        if self.training_in[i].dtype == object, and numerical of self.training_in[i].dtype == float64
+
+        In case that self.training_in is a NumPy ndarray,
+        A feature is considered categorical in case the dataset contains no more than
+        max_different_values different values. Otherwise, it is considered numerical.
+
+        :param i: index of the feature to test if it is categorical
+        :param max_different_values: Maximum number of different values to consider the feature as categorical
+        :return: True if the ith feature of the dataset is categorical. False otherwise
+        """
+
+        if isinstance(self.training_in, pd.DataFrame):
+            if not issubclass(self.training_in.iloc[:,i].dtype.type, np.number): #self.training_in.iloc[:,i].dtype == 'object':
+                return True
+            else:
+                return False
+        elif isinstance(self.training_in, np.ndarray):
+            if len(np.unique(self.training_in[:, i])) <= max_different_values:
+                return True
+            else:
+                return False
+        else:
+            raise Exception('Training dataset is not a Numpy.ndarray nor a pandas.DataFrame: ' + type(self.training_in))
+
+    def get_first_categorical_feature(self, max_different_values = 10):
+        """
+        Return the index of the first categorical feature.
+
+        :param max_different_values: Maximum number of different values to consider the feature as categorical
+        :return: The index of the first categorical feature in the dataset of the fitness function.
+                    None in case all the features have more than max_different_values values
+        """
+
+        for i in range(self.training_in.shape[1]):
+            if self.is_ithfeature_categorical(i, max_different_values):
+                return i
+
+        return None
+
+    def get_first_numerical_feature(self, min_different_values = 11):
+        """
+        Return the index of the first numerical feature
+
+        A feature is considered categorical in case the dataset contains no more than
+        max_different_values different values. Otherwise, it is considered numerical.
+
+        :param min_different_values: Minimum number of different values to consider the feature as numerical
+        :return: The index of the first numerical feature in the dataset of the fitness function.
+                    None in case all the features have less than min_different_values
+        """
+
+        for i in range(self.training_in.shape[1]):
+            if not self.is_ithfeature_categorical(i, min_different_values - 1):
+                return i
+
+        return None

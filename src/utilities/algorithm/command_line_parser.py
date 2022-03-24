@@ -397,6 +397,14 @@ def parse_cmd_args(arguments):
                              'as a list. Specify as many values as desired, '
                              'separated by spaces.')
 
+    parser.add_argument('--cross_validation_seed',
+                        dest='CROSS_VALIDATION_SEED',
+                        type=int,
+                        help='Mandatory if using CROSS_VALIDATION parameter.'
+                             'Seed for the random distribution of patterns'
+                             'into folds for the cross-validation context.'
+                             'It should be an intenger, such as 3, for instance')
+
     # OPTIONS
     parser.add_argument('--random_seed',
                         dest='RANDOM_SEED',
