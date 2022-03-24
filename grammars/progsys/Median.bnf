@@ -8,7 +8,7 @@
 <assign> ::= <bool_var>' = '<bool>|<int_assign>
 <number> ::= <number><num>|<num>
 <num> ::= '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
-<comp_op> ::= '<'|'>'|'=='|'>='|'<='|'!='|'is'|'is not'
+<comp_op> ::= '<'|'>'|'=='|'>='|'<='|'!='
 <bool_var> ::= 'b0'|'b1'|'b2'
 <bool> ::= <bool_var>|<bool_const>|'not '<bool>|'( '<bool>' '<bool_op>' '<bool>' )'|<int>' '<comp_op>' '<int>
 <bool_op> ::= 'and'|'or'

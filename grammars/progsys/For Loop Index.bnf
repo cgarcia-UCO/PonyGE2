@@ -12,7 +12,7 @@
 <for> ::= 'loopBreak% = 0\nfor forCounter% in '<list_int>':{:\n'<code>'\nif loopBreak% > loopBreakConst or stop.value:{:\nbreak\n:}loopBreak% += 1\n:}'|'loopBreak% = 0\nfor '<int_var>' in '<list_int>':{:\n'<code>'\nif loopBreak% > loopBreakConst or stop.value:{:\nbreak\n:}loopBreak% += 1\n:}'
 <number> ::= <number><num>|<num>
 <num> ::= '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
-<comp_op> ::= '<'|'>'|'=='|'>='|'<='|'!='|'is'|'is not'
+<comp_op> ::= '<'|'>'|'=='|'>='|'<='|'!='
 <in_list_comp_op> ::= 'in'|'not in'
 <list_comp_op> ::= '=='|'!='
 <bool_var> ::= 'b0'|'b1'|'b2'
