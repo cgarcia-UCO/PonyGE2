@@ -2,6 +2,7 @@ from multiprocessing import Pool
 
 from algorithm.parameters import params
 from fitness.evaluation import evaluate_fitness
+from fitness.supervised_learning.diversification import diversification
 from operators.initialisation import initialisation
 from stats.stats import get_stats, stats
 from utilities.algorithm.initialise_run import pool_init
@@ -12,7 +13,7 @@ def search_loop():
     """
     This is a standard search process for an evolutionary algorithm. Loop over
     a given number of generations.
-    
+
     :return: The final population after the evolutionary process has run for
     the specified number of generations.
     """
@@ -30,6 +31,10 @@ def search_loop():
 
     # Generate statistics for run so far
     get_stats(individuals)
+
+    # Diversification.
+    if params['SHARING_FITNESS']:
+        individuals = diversification(individuals)
 
     # Traditional GE
     for generation in range(1, (params['GENERATIONS'] + 1)):

@@ -4,6 +4,8 @@ from operators.mutation import mutation
 from operators.replacement import replacement, steady_state
 from operators.selection import selection
 from stats.stats import get_stats
+from algorithm.parameters import params
+from fitness.supervised_learning.diversification import diversification
 
 
 def step(individuals):
@@ -30,6 +32,10 @@ def step(individuals):
 
     # Evaluate the fitness of the new population.
     new_pop = evaluate_fitness(new_pop)
+
+    # Diversification.
+    if params['SHARING_FITNESS']:
+        individuals = diversification(individuals)
 
     # Replace the old population with the new population.
     individuals = replacement(new_pop, individuals)

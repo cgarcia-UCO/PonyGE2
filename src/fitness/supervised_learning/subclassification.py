@@ -1,12 +1,11 @@
-from re import L
 import numpy as np
-import pandas as pd
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
+from utilities.fitness.assoc_rules_measures import get_metrics
 from utilities.fitness.error_metric import f1_score
 
 from utilities.misc.get_labels_probabilities import get_labels_prob
-from utilities.misc.get_gini import get_weighted_gini_index
+from utilities.misc.get_gini import *
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
 
 
@@ -21,7 +20,8 @@ class subclassification(classification):
         if params['ERROR_METRIC'] is None:
             params['ERROR_METRIC'] = f1_score
 
-        self.maximise = params['ERROR_METRIC'].maximise
+        #self.maximise = params['ERROR_METRIC'].maximise
+        self.maximise = False
 
     def evaluate(self, ind, **kwargs):
         """
@@ -53,23 +53,34 @@ class subclassification(classification):
         rules, consecuents = nested_conds_2_rules_list(ind.phenotype)
 
         if ind.invalid == True or rules == []:
-            # Return 'np.nan' if the individual is invalid or there are no rules to analyse.
+            # Return 'np.nan' if the individual is invalid or there are no rules to
+            # analyse.
             return np.nan
 
-        # FIXME: Hacerlo genérico for rule in rules:...
-        aux = x[eval(rules[0])]
-        labels = y[eval(rules[0])]
+        rules_length = len(rules)
 
-        X = eval(rules[0]).tolist()
+        assert rules_length == len(
+            consecuents), "Length of 'rules' list and 'consecuents' list must be the same."
 
-        df = pd.DataFrame(y.tolist())
+        weighted_gini_list = []
 
-        y_encoded = df[0].map({'Si': 1, 'No': 0}).tolist()
+        for index in range(rules_length):
+            aux = x[eval(rules[index])]
+            labels = y[eval(rules[index])]
 
-        get_metrics(X, y_encoded)
+            # Get the list of metrics.
+            metrics = get_metrics(
+                eval(rules[index]), y, consecuents[index], visualize=False)
 
-        # Get labels probabilities.
-        probabilities, n_labels = get_labels_prob(labels)
+            # Get labels probabilities.
+            probabilities, n_labels = get_labels_prob(labels)
+
+            # Gini.
+            # Note: 'metrics[0]' contains 'antec_support' which will be used as weight.
+            weighted_gini_list.append(
+                get_weighted_gini_impurity(probabilities.values(), metrics[0]))
+
+        fitness = sum(weighted_gini_list)
 
         # Get Gini index.
-        return get_weighted_gini_index(probabilities.values(), n_labels.values())
+        return fitness

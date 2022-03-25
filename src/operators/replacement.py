@@ -4,13 +4,14 @@ from operators.crossover import crossover_inds
 from operators.mutation import mutation
 from operators.selection import selection
 from utilities.algorithm.NSGA2 import compute_pareto_metrics
+from stats.stats import get_elite_average_fitness
 
 
 def replacement(new_pop, old_pop):
     """
     Given a new population and an old population, performs replacement using
     specified replacement operator.
-    
+
     :param new_pop: Newly generated population (after selection, variation &
     evaluation).
     :param old_pop: The previous generation population.
@@ -24,7 +25,7 @@ def generational(new_pop, old_pop):
     Replaces the old population with the new population. The ELITE_SIZE best
     individuals from the previous population are appended to new pop regardless
     of whether or not they are better than the worst individuals in new pop.
-    
+
     :param new_pop: The new population (e.g. after selection, variation, &
     evaluation).
     :param old_pop: The previous generation population, from which elites
@@ -41,6 +42,14 @@ def generational(new_pop, old_pop):
     for ind in old_pop[:params['ELITE_SIZE']]:
         new_pop.insert(0, ind)
 
+    # Sort new population: The elite population from the old population is being
+    # inserted at the beginning in the new population, when they may not really be
+    # the best in the new population.
+    new_pop.sort(reverse=True)
+
+    # Save elite average fitness in '.txt'.
+    get_elite_average_fitness(new_pop[:params['ELITE_SIZE']])
+
     # Return the top POPULATION_SIZE individuals of the new pop, including
     # elites.
     return new_pop[:params['POPULATION_SIZE']]
@@ -54,7 +63,7 @@ def steady_state(individuals):
         Variation
         Evaluation
         Replacement
-        
+
     Steady state replacement uses the Genitor model (Whitley, 1989) whereby
     new individuals directly replace the worst individuals in the population
     regardless of whether or not the new individuals are fitter than those
@@ -109,7 +118,7 @@ def nsga2_replacement(new_pop, old_pop):
     replacement. Both new and old populations are combined, pareto fronts
     and crowding distance are calculated, and the replacement population is
     computed based on crowding distance per pareto front.
-    
+
     :param new_pop: The new population (e.g. after selection, variation, &
                     evaluation).
     :param old_pop: The previous generation population.

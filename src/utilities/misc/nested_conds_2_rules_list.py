@@ -54,11 +54,13 @@ def nested_conds_2_rules_list(string):
     """
     substrings = string.split('np.where(')
     result = []
+    consecuents = []
     current_antecedent = []
     num_uses = []
 
     for i in substrings:
         antecedent, consecuent = divide_ant_cons(i)
+        consecuents.append(extract_consecuent(consecuent))
         current_antecedent.append(antecedent)
         num_uses.append(0)
 
@@ -82,4 +84,6 @@ def nested_conds_2_rules_list(string):
                         current_antecedent.append('~(' + last_condition + ')')
                         num_uses[-1] = 1
 
-    return result, extract_consecuent(consecuent)
+    flat_consecuents = [item for sublist in consecuents for item in sublist]
+
+    return result, flat_consecuents
