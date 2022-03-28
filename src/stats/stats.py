@@ -1,8 +1,10 @@
 from copy import copy
 from sys import stdout
 from time import time
+from os import path
 
 import numpy as np
+import pandas as pd
 from algorithm.parameters import params
 from utilities.algorithm.NSGA2 import compute_pareto_metrics
 from utilities.algorithm.state import create_state
@@ -11,6 +13,11 @@ from utilities.stats.file_io import save_best_ind_to_file, \
     save_first_front_to_file, save_stats_headers, save_stats_to_file
 from utilities.stats.save_plots import save_pareto_fitness_plot, \
     save_plot_from_data
+
+from utilities.fitness.assoc_rules_measures import get_cond_in_antec, get_attr_stats, get_metrics, get_min_avg_confidence, get_min_avg_support, get_uncovered_patterns, update_metrics
+from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
+import matplotlib.pyplot as plt
+
 
 """Algorithm statistics"""
 stats = {
@@ -86,7 +93,7 @@ def get_soo_stats(individuals, end):
     """
 
     # Get best individual.
-    best = max(individuals) # Hacer lo de la elite.
+    best = max(individuals)
 
     if not trackers.best_ever or best > trackers.best_ever:
         # Save best individual in trackers.best_ever.
@@ -146,6 +153,11 @@ def get_soo_stats(individuals, end):
 
     if end and not params['SILENT']:
         print_final_stats()
+
+    # Get the best 'params['ELITE_SIZE']' individuals of the population.
+    if end and params['ELITE_SIZE'] != None:
+        if params['ELITE_SIZE'] > 1:
+            get_pop_metrics(individuals, params['ELITE_SIZE'])
 
 
 def get_moo_stats(individuals, end):
@@ -289,9 +301,9 @@ def update_stats(individuals, end):
         # Time Stats
         trackers.time_list.append(time() - stats['time_adjust'])
         stats['time_taken'] = trackers.time_list[-1] - \
-                              trackers.time_list[-2]
+            trackers.time_list[-2]
         stats['total_time'] = trackers.time_list[-1] - \
-                              trackers.time_list[0]
+            trackers.time_list[0]
 
     # Population Stats
     stats['total_inds'] = params['POPULATION_SIZE'] * (stats['gen'] + 1)
@@ -299,7 +311,7 @@ def update_stats(individuals, end):
     if params['CACHE']:
         stats['unique_inds'] = len(trackers.cache)
         stats['unused_search'] = 100 - stats['unique_inds'] / \
-                                 stats['total_inds'] * 100
+            stats['total_inds'] * 100
 
     # Genome Stats
     genome_lengths = [len(i.genome) for i in individuals]
@@ -388,3 +400,315 @@ def print_final_moo_stats():
     for ind in trackers.best_ever:
         print(" ", ind)
     print_generation_stats()
+
+
+def get_pop_metrics(individuals, elite_size):
+    """
+    Prints the final elite or population of the evolutionary process and its metrics.
+
+    Parameters
+    ----------
+    individuals: list
+        Individuals of the final population.
+    elite_size: integer
+        Size of the elite (Preselected in parameters as 'ELITE_SIZE').
+
+    Returns
+    -------
+    Nothing.
+    """
+
+    individuals.sort(reverse=True)
+
+    phenotype_list = []
+    fitness_list = []
+
+    phenotype_index_list = []
+    rule_list = []
+
+    antec_support_list = []
+    consec_support_list = []
+    rule_support_list = []
+
+    precision_list = []
+    recall_list = []
+    lift_list = []
+    leverage_list = []
+    conviction_list = []
+
+    covered_targets_list = []
+
+    for i in range(len(individuals)):  # elite_size):
+        # Note: this line is required if you want to save all the population to avoid invalid and
+        # fitness = nan individuals.
+        if individuals[i].invalid != True and np.isnan(individuals[i].fitness) != True:
+            # Compare each individual with the others.
+            for j in range(i + 1, len(individuals)):
+                if individuals[i].phenotype == individuals[j].phenotype:
+                    # If the individual is repeated, set it as 'invalid'.
+                    individuals[j].invalid = True
+
+            # Save non-repeated individuals.
+            fitness_list.append(individuals[i].fitness)
+            phenotype_list.append(individuals[i].phenotype)
+
+            elite_metrics = get_phenotype_metrics(individuals[i].phenotype, i)
+
+            phenotype_index_list.append(elite_metrics[0])
+            rule_list.append(elite_metrics[1])
+            antec_support_list.append(elite_metrics[2])
+            consec_support_list.append(elite_metrics[3])
+            rule_support_list.append(elite_metrics[4])
+            precision_list.append(elite_metrics[5])
+            recall_list.append(elite_metrics[6])
+            lift_list.append(elite_metrics[7])
+            leverage_list.append(elite_metrics[8])
+            conviction_list.append(elite_metrics[9])
+            covered_targets_list.append(elite_metrics[10])
+
+    # Flatten the lists. Note that in some cases (with complex rules) it is necessary.
+    flat_phenotype_index_list = [
+        item for sublist in phenotype_index_list for item in sublist]
+    flat_rule_list = [item for sublist in rule_list for item in sublist]
+
+    # Note: Extra metrics.
+    flat_antec_support_list = [
+        item for sublist in antec_support_list for item in sublist]
+    flat_consec_support_list = [
+        item for sublist in consec_support_list for item in sublist]
+    flat_rule_support_list = [
+        item for sublist in rule_support_list for item in sublist]
+
+    flat_precision_list = [
+        item for sublist in precision_list for item in sublist]
+    flat_recall_list = [item for sublist in recall_list for item in sublist]
+    flat_lift_list = [item for sublist in lift_list for item in sublist]
+    flat_leverage_list = [
+        item for sublist in leverage_list for item in sublist]
+    flat_conviction_list = [
+        item for sublist in conviction_list for item in sublist]
+
+    flat_covered_targets_list = [
+        item for sublist in covered_targets_list for item in sublist]
+
+    # Dataframes with results.
+    #####################################################################
+    # Trees dataframe:
+    #####################################################################
+    df_trees = pd.DataFrame(list(zip(phenotype_list, fitness_list)),
+                            columns=["Phenotype", "Fitness"])
+
+    # Print and save data into '.csv' file at 'results' path.
+    print(df_trees)
+    filename = path.join(params['FILE_PATH'], "trees.csv")
+    df_trees.to_csv(filename)
+    # print(df_trees.to_latex(index=True))
+
+    #####################################################################
+    # Metrics dataframes:
+    #####################################################################
+
+    df_metrics = pd.DataFrame(list(zip(flat_phenotype_index_list, flat_rule_list, flat_precision_list, flat_recall_list, flat_lift_list, flat_leverage_list, flat_conviction_list, flat_antec_support_list, flat_consec_support_list, flat_rule_support_list, flat_covered_targets_list)),
+                              columns=["Phenotype", "Rule", "Precision", "Recall", "Lift", "Leverage", "Conviction", "S(A)", "S(C)", "S(A-->C)", "Covered patterns"])
+
+    # We want non-repeated rules.
+    df_metrics = df_metrics.drop_duplicates(subset=["Rule"])
+
+    print()
+    print(df_metrics)
+
+    # Save metrics.
+    filename = path.join(params['FILE_PATH'], "metrics.csv")
+    df_metrics.to_csv(filename, index=False)
+    # print(df_metrics.to_latex(index=False))
+
+    # Update metrics given a condition. Read brief for more information.
+    df_metrics_updated = update_metrics(df_metrics)
+
+    # Save updated metrics.
+    filename = path.join(params['FILE_PATH'], "metrics_updated.csv")
+    df_metrics_updated.to_csv(filename, index=False)
+
+    # NOTE: Filtering out some of these metrics:
+    # Discard association rules with consecuent = No.
+    df_metrics_updated_filtered = df_metrics_updated[df_metrics_updated["Rule"].str.contains(
+        "--> No") == False]
+
+    # Discard association rules with precision < 0.7.
+    df_metrics_updated_filtered = df_metrics_updated_filtered.drop(
+        df_metrics_updated_filtered[df_metrics_updated_filtered["Precision"] < 0.7].index)
+
+    # Save updated metrics.
+    filename = path.join(params['FILE_PATH'], "metrics_updated_filtered.csv")
+    df_metrics_updated_filtered.to_csv(filename, index=False)
+
+    #####################################################################
+    # Extra metrics:
+    #####################################################################
+
+    # % Support (Minimum and average support):
+    lhs = get_min_avg_support(df_metrics_updated_filtered["S(A)"])
+
+    # % Confidence (minimum and average confidence):
+    conf = get_min_avg_confidence(df_metrics_updated_filtered["Precision"])
+
+    # N rules (Number of rules):
+    n_rules = len(df_metrics_updated_filtered)
+
+    # N antecedent conditions (compute the number of conditions within an antecedent):
+    n_antecedents, antec_counts = get_cond_in_antec(
+        df_metrics_updated_filtered["Rule"])
+
+    # Get the amount of rows and features in dataset. This will be used to compute
+    # the 'use_freq'.
+    n_rows, n_features = params['FITNESS_FUNCTION'].training_in.shape[0], params['FITNESS_FUNCTION'].training_in.shape[1]
+
+    # Used attributes in rules:
+    used_attr, use_freq = get_attr_stats(
+        df_metrics_updated_filtered["Rule"], n_features)
+
+    # Uncovered patterns:
+    uncovered_patterns = get_uncovered_patterns(
+        df_metrics_updated_filtered["Covered patterns"])
+
+    df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
+                            columns=[f"%LHS.Sup.\nMin:Avg", "%Conf.\nMin:Avg", "#rules", " |antecedent|\n" + str(n_antecedents), "Used attrs.", "%Attr.use freq.", "%Unc.pos."])
+
+    # Save extra metrics.
+    filename = path.join(params['FILE_PATH'], "metrics_extra.csv")
+    df_extra.to_csv(filename, index=False)
+
+    # Plot average fitness of the whole evolutionary process.
+    plot_elite_average_fitness()
+
+
+def get_phenotype_metrics(phenotype, phenotype_index):
+    """
+    Read a phenotype and compute the following metrics: precision, recall, lift, leverage and conviction.
+
+    Parameters
+    ----------
+    phenotype: Phenotype of an individual.
+    phenotype_index: Index of the current phenotype.
+
+    Returns
+    -------
+    List with all the computed metrics as follows: [antec_support, consec_support, rule_support, rule_precision, rule_recall, rule_lift, rule_leverage, rule_conviction].
+    """
+
+    # Get training and test data
+    training_in, training_exp, test_in, test_exp = params[
+        'FITNESS_FUNCTION'].training_in, params['FITNESS_FUNCTION'].training_exp, params['FITNESS_FUNCTION'].test_in, params['FITNESS_FUNCTION'].test_exp
+
+    x = training_in
+    y = training_exp
+
+    rules, consecuents = nested_conds_2_rules_list(phenotype)
+
+    rules_length = len(rules)
+
+    assert rules_length == len(
+        consecuents), "Length of 'rules' list and 'consecuents' list must be the same."
+
+    # Elements to return:
+    phenotype_index_list = []
+    rule_list = []
+
+    antec_support_list = []
+    consec_support_list = []
+    rule_support_list = []
+
+    precision_list = []
+    recall_list = []
+    lift_list = []
+    leverage_list = []
+    conviction_list = []
+
+    covered_targets_list = []
+
+    for index in range(rules_length):
+        # Get the list of metrics.
+        metrics = get_metrics(
+            eval(rules[index]), y, consecuents[index], visualize=False)
+
+        phenotype_index_list.append(phenotype_index)
+        rule_list.append(rules[index] + " --> " + consecuents[index])
+        antec_support_list.append(metrics[0])
+        consec_support_list.append(metrics[1])
+        rule_support_list.append(metrics[2])
+        precision_list.append(metrics[3])
+        recall_list.append(metrics[4])
+        lift_list.append(metrics[5])
+        leverage_list.append(metrics[6])
+        conviction_list.append(metrics[7])
+
+        covered_targets_list.append(metrics[8])
+
+    return [phenotype_index_list, rule_list, antec_support_list, consec_support_list, rule_support_list, precision_list, recall_list, lift_list, leverage_list, conviction_list, covered_targets_list]
+
+
+def get_elite_average_fitness(current_elite):
+    """
+    Function that get the average fitness of each elite in the whole
+    evolutionary process. The average fitness is saved in a '.txt'
+    file inside 'results' folder.
+
+    Parameters
+    ----------
+    - current_elite: elite in the i-th iteration.
+
+    Returns
+    -------
+    Nothing.
+    """
+    sum = 0
+    for ind in current_elite:
+        sum += ind.fitness
+
+    average_elite_fitness = str(sum / len(current_elite))
+
+    file_name = path.join(params['FILE_PATH'], "average_fitness.txt")
+    # Open the file in append & read mode ('a+')
+    with open(file_name, "a+") as file_object:
+        # Move read cursor to the start of file.
+        file_object.seek(0)
+        # If file is not empty then append '\n'
+        data = file_object.read(100)
+        if len(data) > 0:
+            file_object.write("\n")
+        # Append text at the end of file
+        file_object.write(average_elite_fitness)
+
+
+def plot_elite_average_fitness():
+    """
+    Plot average fitness. The result is saved as '.png' at 'results' folder.
+    """
+
+    # Average fitness:
+    with open(path.join(params['FILE_PATH'], "average_fitness.txt")) as f:
+        lines = f.readlines()
+
+    # Average fitness list.
+    y = []
+    for line in lines:
+        y.append(float(line))
+
+    # Generations:
+    #x = [i for i in range(len(y))]
+    x = range(len(y))
+
+    plt.ylabel('average_fitness')
+    plt.xlabel('Generation')
+    plt.plot(x, y)
+
+    # # Change fontsize according to the number of elements of x-axis.
+    # fontsize = 500 / len(x)
+    # if fontsize > 10:
+    #     fontsize = 10
+
+    # # Force x-axis (Generations) to be integer.
+    # plt.xticks(x, fontsize=fontsize)
+
+    # Save plot as '.png' at 'results' folder.
+    plt.savefig(path.join(params['FILE_PATH'], "average_fitness.png"))
