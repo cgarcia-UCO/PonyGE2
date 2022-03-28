@@ -3,7 +3,7 @@ from fitness.evaluation import evaluate_fitness
 from operators.crossover import crossover_inds
 from operators.mutation import mutation
 from operators.selection import selection
-from utilities.algorithm.NSGA2 import compute_pareto_metrics
+from utilities.algorithm.NSGA2 import compute_pareto_metrics, compute_pareto_metrics_v2
 from stats.stats import get_elite_average_fitness
 
 
@@ -11,7 +11,7 @@ def replacement(new_pop, old_pop):
     """
     Given a new population and an old population, performs replacement using
     specified replacement operator.
-
+    
     :param new_pop: Newly generated population (after selection, variation &
     evaluation).
     :param old_pop: The previous generation population.
@@ -25,7 +25,7 @@ def generational(new_pop, old_pop):
     Replaces the old population with the new population. The ELITE_SIZE best
     individuals from the previous population are appended to new pop regardless
     of whether or not they are better than the worst individuals in new pop.
-
+    
     :param new_pop: The new population (e.g. after selection, variation, &
     evaluation).
     :param old_pop: The previous generation population, from which elites
@@ -63,7 +63,7 @@ def steady_state(individuals):
         Variation
         Evaluation
         Replacement
-
+        
     Steady state replacement uses the Genitor model (Whitley, 1989) whereby
     new individuals directly replace the worst individuals in the population
     regardless of whether or not the new individuals are fitter than those
@@ -118,7 +118,7 @@ def nsga2_replacement(new_pop, old_pop):
     replacement. Both new and old populations are combined, pareto fronts
     and crowding distance are calculated, and the replacement population is
     computed based on crowding distance per pareto front.
-
+    
     :param new_pop: The new population (e.g. after selection, variation, &
                     evaluation).
     :param old_pop: The previous generation population.
@@ -147,7 +147,8 @@ def nsga2_replacement(new_pop, old_pop):
             # Sort the current pareto front with respect to crowding distance.
             pareto.fronts[i] = sorted(pareto.fronts[i],
                                       key=lambda item:
-                                      pareto.crowding_distance[item])
+                                      pareto.crowding_distance[item],
+                                      reverse=True)
 
             # Get number of individuals to add in temp to achieve the pop_size
             diff_size = pop_size - len(temp_pop)
@@ -163,3 +164,59 @@ def nsga2_replacement(new_pop, old_pop):
 
 # Set attributes for all operators to define multi-objective operators.
 nsga2_replacement.multi_objective = True
+
+
+def nsga2_replacement_v2(new_pop, old_pop):
+    """
+    Replaces the old population with the new population using NSGA-II
+    replacement. Both new and old populations are combined, pareto fronts
+    and crowding distance are calculated, and the replacement population is
+    computed based on crowding distance per pareto front.
+
+    This second version just uses compute_pareto_metrics_v2, instead of compute_pareto_metrics
+
+    :param new_pop: The new population (e.g. after selection, variation, &
+                    evaluation).
+    :param old_pop: The previous generation population.
+    :return: The 'POPULATION_SIZE' new population.
+    """
+
+    # Combine both populations (R_t = P_t union Q_t)
+    new_pop.extend(old_pop)
+
+    # Compute the pareto fronts and crowding distance
+    pareto = compute_pareto_metrics_v2(new_pop)
+
+    # Size of the new population
+    pop_size = params['POPULATION_SIZE']
+
+    # New population to replace the last one
+    temp_pop, i = [], 0
+
+    while len(temp_pop) < pop_size:
+        # Populate the replacement population
+
+        if len(pareto.fronts[i]) <= pop_size - len(temp_pop):
+            temp_pop.extend(pareto.fronts[i])
+
+        else:
+            # Sort the current pareto front with respect to crowding distance.
+            pareto.fronts[i] = sorted(pareto.fronts[i],
+                                      key=lambda item:
+                                      pareto.crowding_distance[item],
+                                      reverse=True)
+
+            # Get number of individuals to add in temp to achieve the pop_size
+            diff_size = pop_size - len(temp_pop)
+
+            # Extend the replacement population
+            temp_pop.extend(pareto.fronts[i][:diff_size])
+
+        # Increment counter.
+        i += 1
+
+    return temp_pop
+
+
+# Set attributes for all operators to define multi-objective operators.
+nsga2_replacement_v2.multi_objective = True

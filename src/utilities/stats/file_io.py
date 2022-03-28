@@ -170,3 +170,28 @@ def save_params_to_file():
                        str(params[param]) + "\n")
 
     savefile.close()
+
+def save_values_to_file(values, filename, header=None):
+
+    filename = path.join(params['FILE_PATH'], filename)
+    savefile = open(filename, 'w')
+
+    if isinstance(header, list):
+        for i in header:
+            savefile.write(str(i)+"; ")
+
+        savefile.write("\n")
+
+        for i in values:
+            for j in i:
+                savefile.write(str(j)+"; ")
+            savefile.write("\n")
+
+    else:
+        if isinstance(header, str):
+            savefile.write(header)
+
+        for i in values:
+            savefile.write(str(i)+"\n")
+
+    savefile.close()

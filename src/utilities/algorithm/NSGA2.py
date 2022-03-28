@@ -21,6 +21,22 @@ def compute_pareto_metrics(population):
 
     return pareto
 
+def compute_pareto_metrics_v2(population):
+    """
+    Compute the pareto fronts using NSGA-II. This second version uses sort_non_dominated_v2, instead of sort_non_dominated
+
+    :param population: A population to be sorted into fronts using NSGA-II.
+    :return: The pareto fronts.
+    """
+
+    # Calculate the pareto fronts using Non-Dominated Sorting.
+    pareto = sort_non_dominated_v2(population)
+
+    # Calculate the crowding distance
+    pareto = calculate_crowding_distance(pareto)
+
+    return pareto
+
 
 def sort_non_dominated(population):
     """Sort the first *k* *population* into different non-domination levels
@@ -60,6 +76,94 @@ def sort_non_dominated(population):
             elif dominates(q, p):
                 # Increment the domination counter of p
                 pareto.update_domination_count(p, True)
+
+        # *p* belongs to the first front
+        if pareto.get_domination_count(p) == 0:
+            pareto.fronts[0].append(p)
+            pareto.rank[p] = 0
+
+    # Initialize the front counter
+    i = 0
+
+    # Compute the fronts.
+    while len(pareto.fronts[i]) > 0:
+
+        # Used to store the members of the next front
+        big_q = []
+
+        # For each each solution in the current front
+        for p in pareto.fronts[i]:
+
+            # Decrement the domination counter of each solution dominated by
+            # *p*
+            for q in pareto.dominated_solutions[p]:
+                pareto.update_domination_count(q, False)
+
+                # If the counter reaches 0, the solution is added to the next
+                # front.
+                if pareto.get_domination_count(q) == 0:
+                    pareto.rank[q] = i + 1
+                    big_q.append(q)
+
+        # Update the front counter
+        i += 1
+
+        # Add the solutions selected in this iteration to the next front
+        pareto.fronts.append(big_q)
+
+    return pareto
+
+def sort_non_dominated_v2(population):
+    """Sort the first *k* *population* into different non-domination levels
+    using the "Fast Nondominated Sorting Approach" proposed by Deb et al.,
+    see [Deb2002]_. This algorithm has a time complexity of :math:`O(MN^2)`,
+    where :math:`M` is the number of objectives and :math:`N` the number of
+    individuals.
+
+    This second version establishes positive domination relations between similar solutions.
+    The idea is to allow the first solution into the current front, and move the following ones with
+    equal phenotype to the following fronts.
+    In addition, I think it is more efficient.
+
+    :param population: A list of individuals to select from.
+
+    :returns: A list of Pareto fronts (lists), the first list includes
+              non-dominated individuals.
+
+    .. [Deb2002] Deb, Pratab, Agarwal, and Meyarivan, "A fast elitist
+       non-dominated sorting genetic algorithm for multi-objective
+       optimization: NSGA-II", 2002.
+
+    """
+
+    # Initialise empty pareto class instance.
+    pareto = ParetoInfo()
+
+    # Compute the Inter-Quartile Range (+1) value used to normalize the
+    # crowding distance
+    pareto.compute_iqr(population)
+
+    # The naming *p* and *q* is the same adopted in [Deb2002]_
+    for index, p in enumerate(population):
+
+        # Compute the domination counter of p
+        for q in population[index+1:]:
+
+            if dominates(p, q):
+                # Add *q* to the set of solutions dominated by *p*
+                pareto.dominated_solutions[p].append(q)
+                pareto.update_domination_count(q, True)
+
+            elif dominates(q, p):
+                # Increment the domination counter of p
+                pareto.dominated_solutions[q].append(p)
+                pareto.update_domination_count(p, True)
+
+            # This stablishes domination preferences between equivalent solutions
+            # The first one wins
+            elif p.phenotype == q.phenotype:
+                pareto.dominated_solutions[p].append(q)
+                pareto.update_domination_count(q, True)
 
         # *p* belongs to the first front
         if pareto.get_domination_count(p) == 0:

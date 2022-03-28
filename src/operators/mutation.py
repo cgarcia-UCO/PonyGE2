@@ -5,6 +5,7 @@ from representation import individual
 from representation.derivation import generate_tree
 from representation.latent_tree import latent_tree_mutate, latent_tree_repair
 from utilities.representation.check_methods import check_ind
+from utilities.misc.prune_if_else_tree import prune_if_else_tree
 
 
 def mutation(pop):
@@ -229,9 +230,18 @@ def LTGE_mutation(ind):
 
     return ind
 
+def multiple_mut_operators(ind):
+    operators = eval(params['MUTATION_OPERATORS'])
+    ind_0 = ind
+
+    for i in operators:
+        ind = i(ind)
+
+    return ind
 
 # Set attributes for all operators to define linear or subtree representations.
 int_flip_per_codon.representation = "linear"
 int_flip_per_ind.representation = "linear"
 subtree.representation = "subtree"
+multiple_mut_operators.representation = "subtree"
 LTGE_mutation.representation = "latent tree"

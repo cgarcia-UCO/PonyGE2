@@ -3,9 +3,49 @@ from os import path
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedKFold
 
 from algorithm.parameters import params
 from scipy.io import arff
+
+def impute_missing_values(train_set, test_set):
+
+    def get_impute_values(a_series):
+        if (a_series.dtype == 'object' or a_series.dtype == 'category' or a_series.dtype == 'bool'):
+            return a_series.mode()
+        else:
+            return a_series.median()
+
+    imputing_values = train_set.apply(get_impute_values)
+    train_nullvalues = train_set.isnull()
+    train_set = train_set.copy()
+    if type(imputing_values) == pd.DataFrame:
+        train_set.fillna(imputing_values.iloc[0,:], inplace=True)
+    else:
+        train_set.fillna(imputing_values, inplace=True)
+    labels=list(train_set.columns) + [i+'_missing' for i in train_nullvalues.columns]
+    train_set = pd.concat([train_set, train_nullvalues], axis=1)
+    train_set.columns = labels
+
+    if test_set is not None:
+        test_nullvalues = test_set.isnull()
+        test_set = test_set.copy()
+        if type(imputing_values) == pd.DataFrame:
+            test_set.fillna(imputing_values.iloc[0,:], inplace=True)
+        else:
+            test_set.fillna(imputing_values, inplace=True)
+        test_set = pd.concat([test_set, test_nullvalues], axis=1,keys=labels)
+        test_set.columns = labels
+
+    #Drop columns with just one value
+    for col in train_set.columns:
+        if len(train_set[col].unique()) == 1:
+            train_set.drop(col, inplace=True, axis=1)
+
+            if test_set is not None:
+                test_set.drop(col, inplace=True, axis=1)
+
+    return train_set, test_set
 
 
 def get_Xy_train_test_separate(train_filename, test_filename, skip_header=0):
@@ -104,8 +144,10 @@ def read_arff(file):
             content = content.replace('ú', 'u')
             content = content.replace('ñ', 'n')
             with io.StringIO(content) as f2:
-                data, metadata = arff.loadarff(f2)
+                data_metadata = arff.loadarff(f2)
 
+    data,metadata = data_metadata
+    # arff.dump(data_metadata, f)
     data = pd.DataFrame(data)
     data = \
         data.apply(lambda x: x.str.decode('utf-8') if x.dtype == 'object' else x)
@@ -114,21 +156,22 @@ def read_arff(file):
     input_data = data.iloc[:, :num_in_features]
     output = data.iloc[:, num_in_features]
 
-    return input_data, output
+    return input_data, output, metadata
 
 def get_data(train, test):
     """
     Return the training and test data for the current experiment.
     
     :param train: The desired training dataset.
-    :param test: The desired testing dataset.
+    :param test: The desired testing dataset. If filename, then read it; FIXME the rest of the comment might be wrong. I think I moved to using a single integer
+		if tuple or list [i,j], then j means the number of folds and i means the index of the test fold
     :return: The parsed data contained in the dataset files.
     """
 
     # Get the path to the training dataset.
     train_set = path.join("..", "datasets", train)
 
-    if test:
+    if test and isinstance(test, str) and path.isfile(path.join("..","datasets",test)):
         # Get the path to the testing dataset.
         test_set = path.join("..", "datasets", test)
 
@@ -138,13 +181,36 @@ def get_data(train, test):
 
     if train_set.endswith('.arff'):
         test_in, test_out = None, None
-        training_in, training_out = read_arff(train_set)
+        training_in, training_out, metadata = read_arff(train_set)
 
-        if test_set is not None:
-            test_in, test_out = read_arff(test_set)
+        if test_set is None and isinstance(test, str):
+            try:
+                test = eval(test)
+            except:
+                test = None
+
+        if params['CROSS_VALIDATION'] and isinstance(test, int):
+            random_state = None
+
+            assert 'CROSS_VALIDATION_SEED' in params
+
+            if 'CROSS_VALIDATION_SEED' in params:
+                random_state = params['CROSS_VALIDATION_SEED']
+
+            folds_generator = StratifiedKFold(n_splits=params['CROSS_VALIDATION'], shuffle=True, random_state=random_state)
+            for _, (train_index, test_index) in zip(range(test + 1), folds_generator.split(training_in, training_out)):
+                pass
+            test_in, test_out = training_in.iloc[test_index], training_out[test_index]
+            training_in, training_out = training_in.iloc[train_index], training_out[train_index]
+        elif test_set is not None:
+            test_in, test_out, metadata = read_arff(test_set)
+
+        if params.get('IMPUTE_MISSING', False):
+            training_in, test_in = impute_missing_values(training_in, test_in)
+
     else:
         # Read in the training and testing datasets from the specified files.
         training_in, training_out, test_in, \
         test_out = get_Xy_train_test_separate(train_set, test_set, skip_header=1)
 
-    return training_in, training_out, test_in, test_out
+    return training_in, training_out, test_in, test_out, metadata

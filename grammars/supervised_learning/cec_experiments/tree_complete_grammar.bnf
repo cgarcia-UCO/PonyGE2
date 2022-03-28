@@ -1,0 +1,15 @@
+<cf> ::= np.where(<cond>, <cf>, <cf>) | <GE_GENERATE:dataset_target_labels>
+
+<cond> ::= (<e> <= <e>)
+           | <GE_GENERATE:dataset_eq_conditions>
+           | <GE_GENERATE:dataset_neq_conditions>
+           | <GE_GENERATE:dataset_lessequal_conditions>
+           | <GE_GENERATE:dataset_inset_conditions>
+           | <GE_GENERATE:dataset_notin_conditions>
+           | <GE_GENERATE:dataset_greater_conditions>
+           | <cond> & <cond>
+
+<e> ::= (<e> <op> <e>) | (x[<GE_GENERATE:dataset_numeric_labels>]) | <c>
+
+<op> ::= + | * | -
+<c> ::= -3.0 | -2.0 | -1.0 | -0.5 | -0.1 | -0.01 | -0.001 | 0.001 | 0.01 | 0.1 | 0.5 | 1.0 | 2.0 | 3.0

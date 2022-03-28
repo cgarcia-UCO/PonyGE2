@@ -59,6 +59,10 @@ class progsys(base_ff):
         if 'exception' in result and 'JSONDecodeError' in result['exception']:
             self.eval.stdin.close()
             self.eval = self.create_eval_process()
+            
+       	if 'quality' in	result:
+            if result['quality'] > sys.maxsize:
+                result['quality'] = sys.maxsize
 
         if 'quality' not in result:
             result['quality'] = sys.maxsize

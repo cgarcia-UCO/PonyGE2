@@ -196,10 +196,10 @@ precision_score.maximise = True
 
 def recall_score(y, yhat):
     """
-    The recall is the ratio tp / (tp + fn) where tp is 
-    the number of true positives and fn the number of false 
-    negatives. The recall is intuitively the ability of 
-    the classifier to find all the positive samples. The best 
+    The recall is the ratio tp / (tp + fn) where tp is
+    the number of true positives and fn the number of false
+    negatives. The recall is intuitively the ability of
+    the classifier to find all the positive samples. The best
     value is 1 and the worst value is 0.
     See: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html
 
@@ -253,3 +253,8 @@ def precision_and_recall_score(y, yhat):
 
 # Set maximise attribute for precision_and_recall_score error metric.
 precision_and_recall_score.maximise = True
+
+def accuracy(y, yhat):
+    return (np.sum(y == yhat) / len(y))
+
+accuracy.maximise = True

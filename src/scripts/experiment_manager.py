@@ -19,7 +19,7 @@ from algorithm.parameters import params, set_params
 from scripts.stats_parser import parse_stats_from_runs
 
 
-def execute_run(seed):
+def execute_run(seed, parameters=[]):
     """
     Initialise all aspects of a run.
 
@@ -27,7 +27,16 @@ def execute_run(seed):
     """
 
     exec_str = executable + " ponyge.py " \
-               "--random_seed " + str(seed) + " " + " ".join(sys.argv[1:])
+               "--random_seed " + str(seed) + " "
+
+    for i in parameters:
+        if isinstance(i, list):
+            exec_str += i[0] + " " + i[1] + " "
+        else:
+            exec_str += i + " "
+
+    exec_str += " ".join(sys.argv[1:])
+    print(exec_str)
 
     call(exec_str, shell=True)
 
@@ -42,12 +51,20 @@ def execute_runs():
     # Initialise empty list of results.
     results = []
 
+    # Initialise iterable parameters for cross-validation
+    folds = params.get('CROSS_VALIDATION', 0)
+    iterable_parameters = []
+
+    if folds > 0:
+        params['RUNS'] = params['CROSS_VALIDATION']
+        for i in range(folds):
+            iterable_parameters.append(["--dataset_test", str(i)])
     # Initialise pool of workers.
     pool = Pool(processes=params['CORES'])
 
     for run in range(params['RUNS']):
         # Execute a single evolutionary run.
-        results.append(pool.apply_async(execute_run, (run,)))
+        results.append(pool.apply_async(execute_run, (run, iterable_parameters[run])))
 
     for result in results:
         result.get()
@@ -94,7 +111,7 @@ def main():
 
     # Save spreadsheets and all plots for all runs in the 'EXPERIMENT_NAME'
     # folder.
-    parse_stats_from_runs(params['EXPERIMENT_NAME'])
+    # parse_stats_from_runs(params['EXPERIMENT_NAME'])
 
 
 if __name__ == "__main__":
