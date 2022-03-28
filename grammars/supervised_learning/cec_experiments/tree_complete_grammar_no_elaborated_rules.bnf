@@ -1,0 +1,7 @@
+<cf> ::= np.where(<cond>, <cf>, <cf>) | <GE_GENERATE:dataset_target_labels>
+
+<cond> ::= <GE_GENERATE:dataset_eq_conditions>
+           | <GE_GENERATE:dataset_neq_conditions>
+           | <GE_GENERATE:dataset_lessequal_conditions>
+           | <GE_GENERATE:dataset_greater_conditions>
+           | <cond> & <cond>
