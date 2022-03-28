@@ -170,7 +170,10 @@ def new_similarity_approach(features, n_trees):
                     minimum = min(ones[i], ones[j])
 
                 # Append to the similarity matrix the similarity factor.
-                aux.append(n_commons/minimum)
+                if minimum > 0:
+                    aux.append(n_commons/minimum)
+                else:
+                    aux.append(0)
         A.append(aux)
 
     # Print similarity matrix.

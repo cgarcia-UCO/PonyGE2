@@ -23,3 +23,4 @@ TOURNAMENT_SIZE:        2
 VERBOSE: 				False
 SHARING_FITNESS:		True
 SHARING_PROCEDURE:		similarity
+EXPERIMENT_NAME:        prueba_con_codigo_Ventura

@@ -189,7 +189,7 @@ def get_data(train, test):
             except:
                 test = None
 
-        if params['CROSS_VALIDATION'] and isinstance(test, int):
+        if 'CROSS_VALIDATION' in params and params['CROSS_VALIDATION'] and isinstance(test, int):
             random_state = None
 
             assert 'CROSS_VALIDATION_SEED' in params

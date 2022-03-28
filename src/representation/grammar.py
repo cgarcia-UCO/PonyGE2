@@ -677,7 +677,7 @@ class Grammar(object):
             num_processed_features = 0
             first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
 
-            if params['EXPERIMENT_NAME'].startswith('ponyge2'): #TODO eliminar
+            if params['EXPERIMENT_NAME'] and params['EXPERIMENT_NAME'].startswith('ponyge2'): #TODO eliminar
                 first_feature = 0
 
             inputs = params['FITNESS_FUNCTION'].training_in
