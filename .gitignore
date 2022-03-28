@@ -1,0 +1,10 @@
+/parameters/cec_experiments/*
+/src/cec_experiments.txt
+/src/cec_experiments.txt_executed
+/parameters/colorrectal_cancer.txt
+/datasets/data.arff
+/datasets/new_folds/folds_0.690414.zip
+/datasets/new_folds/folds_0.696141.zip
+/src/.vscode/launch.json
+/src/nohup.out
+/pony_2022_03_24_08_36.zip
