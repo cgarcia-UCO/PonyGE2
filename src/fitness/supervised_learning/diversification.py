@@ -19,31 +19,43 @@ def get_features_indexes(phenotype):
     -------
     - result: sorted list with the wanted-unique indexes.
     """
-    subphenotype = phenotype.split("x.iloc")
 
-    # Check if 'subphenotype' string has brackets.
-    for i in range(len(subphenotype) - 1):
-        if subphenotype[i].find("[") == -1:
-            subphenotype.pop(i)
+    ############ CÓDIGO CARLOS##############
+    attrs = phenotype.split('x[\'')[1:]
+    attrs = [j for i in attrs for j in i.split('\']')][::2]
 
-    # Get the unformatted features indexes.
-    features = []
-    for i in subphenotype:
-        opening_bracket = i.index("[")
-        closing_bracket = i.index("]")
-        features.append(i[opening_bracket:closing_bracket + 1])
+    # phenotype_splitted = phenotype.split('\'')
+    used_attrs = [i in attrs for i in params['FITNESS_FUNCTION'].training_in.columns] # TODO esto hay que multiplicarlo por 2^n con n la profundidad del subarbol donde aparece dicho atributo
+    return np.where(used_attrs)[0]
+    ############ FIN CÓDIGO CARLOS##########
 
-    result = []
-    for feature in features:
-        # Get the integers, which reference each feature.
-        result.append(re.findall(r'\d+', feature))
-
-    # Flatten the result.
-    result = [int(item) for sublist in result for item in sublist]
-
-    # Get sorted wanted-unique indexes.
-    #   To make them unique --> list(set(result)).
-    return sorted(list(set(result)))
+    ############# CÓDIGO VENTURA##############
+    # subphenotype = phenotype.split("x.iloc")
+    #
+    # # Check if 'subphenotype' string has brackets.
+    # for i in range(len(subphenotype) - 1):
+    #     if subphenotype[i].find("[") == -1:
+    #         subphenotype.pop(i)
+    #
+    # # Get the unformatted features indexes.
+    # features = []
+    # for i in subphenotype:
+    #     opening_bracket = i.index("[")
+    #     closing_bracket = i.index("]")
+    #     features.append(i[opening_bracket:closing_bracket + 1])
+    #
+    # result = []
+    # for feature in features:
+    #     # Get the integers, which reference each feature.
+    #     result.append(re.findall(r'\d+', feature))
+    #
+    # # Flatten the result.
+    # result = [int(item) for sublist in result for item in sublist]
+    #
+    # # Get sorted wanted-unique indexes.
+    # #   To make them unique --> list(set(result)).
+    # return sorted(list(set(result)))
+    ##########FIN CÓDIGO VENTURA##################3
 
 
 def get_ind_used_features(individuals, n_dataset_features):
@@ -147,18 +159,20 @@ def new_similarity_approach(features, n_trees):
     ones = [i.count(1) for i in similarities]
 
     # Compute similarity matrix over the features.
-    A = []  # Similarity matrix.
+    #A = []  # Similarity matrix. #FIXED
+    A = np.zeros((n_trees,n_trees))
     for i in reversed(range(len(similarities))):
-        aux = []
-        for j in reversed(range(i, len(similarities))):
+        # aux = []
+        for j in reversed(range(i)):# FIXED, len(similarities))):
             if i == j:
                 # Same element, similarity = 1.
-                aux.append(1)
+                A[i,i] = 1
+                # aux.append(1)
             else:
                 # Boolean array of common elements:
                 # 0: is not common / 1: is common.
-                commons = [1 if tuple(item)[0] == tuple(
-                    item)[1] else 0 for item in zip(similarities[i], similarities[j])]
+                commons = [1 if tuple(item)[0] == 1 and tuple(
+                    item)[1] == 1 else 0 for item in zip(similarities[i], similarities[j])] #FIXED Antes contaba todas las coincidencias
 
                 # Count the amount of commons.
                 n_commons = commons.count(1)
@@ -171,19 +185,27 @@ def new_similarity_approach(features, n_trees):
 
                 # Append to the similarity matrix the similarity factor.
                 if minimum > 0:
-                    aux.append(n_commons/minimum)
+                    A[i,j] = n_commons/minimum
+                    A[j,i] = A[i,j]
+                    # aux.append(n_commons/minimum)
                 else:
-                    aux.append(0)
-        A.append(aux)
+                    A[i,j] = 0
+                    A[j,i] = A[i,j]
+                    # aux.append(0)
+        # A.append(aux)
 
     # Print similarity matrix.
     # print('pairwise dense output:\n {}\n'.format(A))
 
     # Get all similarities in one sorted list.
-    for i in range(n_trees):
-        for j in range(i):
-            all_similarities.append(A[i][j])
-    all_similarities.sort()
+    # for i in range(n_trees): #FIXED
+    #     for j in range(i):
+    #         all_similarities.append(A[i][j])
+    # all_similarities.sort()
+
+    # all_similarities = [i for j in A for i in j]
+
+    all_similarities = A.flatten()
 
     return A, all_similarities
 

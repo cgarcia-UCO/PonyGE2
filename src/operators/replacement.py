@@ -4,7 +4,7 @@ from operators.crossover import crossover_inds
 from operators.mutation import mutation
 from operators.selection import selection
 from utilities.algorithm.NSGA2 import compute_pareto_metrics, compute_pareto_metrics_v2
-from stats.stats import get_elite_average_fitness
+from stats.stats import get_average_fitness
 
 
 def replacement(new_pop, old_pop):
@@ -48,7 +48,7 @@ def generational(new_pop, old_pop):
     new_pop.sort(reverse=True)
 
     # Save elite average fitness in '.txt'.
-    get_elite_average_fitness(new_pop[:params['ELITE_SIZE']])
+    get_average_fitness(new_pop[:params['POPULATION_SIZE']])#[:params['ELITE_SIZE']])
 
     # Return the top POPULATION_SIZE individuals of the new pop, including
     # elites.

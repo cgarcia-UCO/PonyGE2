@@ -1,11 +1,13 @@
 CACHE:                  True
 CODON_SIZE:             100000
-CROSSOVER:              variable_onepoint
+CROSSOVER:              multiple_x_operators
+CROSS_OPERATORS:        [subtree, prune_if_else_tree]
+#CROSSOVER:              variable_onepoint
 CROSSOVER_PROBABILITY:  0.75
 DATASET_TRAIN:          data.arff
 DATASET_TEST:           data.arff
 DEBUG:                  False
-ELITE_SIZE:				5
+ELITE_SIZE:				0
 ERROR_METRIC:           precision_and_recall_score
 GENERATIONS:            100
 MAX_GENOME_LENGTH:      500
@@ -14,13 +16,17 @@ INITIALISATION:         PI_grow
 INVALID_SELECTION:      False
 MAX_INIT_TREE_DEPTH:    10
 MAX_TREE_DEPTH:         17
-MUTATION:               int_flip_per_codon
+MUTATION:               multiple_mut_operators
+MUTATION_OPERATORS:     [subtree, prune_if_else_tree]
+#MUTATION:               int_flip_per_codon
+MIN_GINI_REDUCTION:     0.0
+SIMPLIFY_MIN_PATTERNS:  0
 POPULATION_SIZE:        100
 FITNESS_FUNCTION:       supervised_learning.subclassification
 REPLACEMENT:            generational
 SELECTION:              tournament
 TOURNAMENT_SIZE:        2
-VERBOSE: 				False
+VERBOSE: 				True
 SHARING_FITNESS:		True
 SHARING_PROCEDURE:		similarity
 EXPERIMENT_NAME:        prueba_con_codigo_Ventura

@@ -421,8 +421,7 @@ def get_soo_stats_v2(individuals, end):
 
     # Get the best 'params['ELITE_SIZE']' individuals of the population.
     if end and params['ELITE_SIZE'] != None:
-        if params['ELITE_SIZE'] > 1:
-            get_pop_metrics(individuals, params['ELITE_SIZE'])
+        get_pop_metrics(individuals, params['ELITE_SIZE'])
 
 def get_moo_stats_v2(individuals, end):
     """
@@ -929,7 +928,7 @@ def get_phenotype_metrics(phenotype, phenotype_index):
     return [phenotype_index_list, rule_list, antec_support_list, consec_support_list, rule_support_list, precision_list, recall_list, lift_list, leverage_list, conviction_list, covered_targets_list]
 
 
-def get_elite_average_fitness(current_elite):
+def get_average_fitness(current_elite):
     """
     Function that get the average fitness of each elite in the whole
     evolutionary process. The average fitness is saved in a '.txt'
@@ -944,10 +943,13 @@ def get_elite_average_fitness(current_elite):
     Nothing.
     """
     sum = 0
+    count = 0
     for ind in current_elite:
-        sum += ind.fitness
+        if ind.invalid == False and np.isnan(ind.fitness).any() == False:
+            sum += ind.fitness
+            count += 1
 
-    average_elite_fitness = str(sum / len(current_elite))
+    average_elite_fitness = str(sum / count)
 
     file_name = path.join(params['FILE_PATH'], "average_fitness.txt")
     # Open the file in append & read mode ('a+')

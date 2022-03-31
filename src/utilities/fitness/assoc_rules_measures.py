@@ -31,7 +31,11 @@ def get_metrics(antec_eval, y, consec, visualize):
     :param visualize: Boolean to show the metrics.
     :return list with all the computed metrics as follows: [antec_support, consec_support, rule_support, rule_precision, rule_recall, rule_lift, rule_leverage, rule_conviction, covered_patterns_list].
     """
-    covered_targets = y[antec_eval]
+    covered_targets = []
+    try: # If we try to get rows with (-1.0 <= (-3.0 + -0.01)), which can be generated, that would produce an error
+        covered_targets = y[antec_eval]
+    except:
+        pass
 
     # If there are no covered targets, return 'np.nan'.
     if len(covered_targets) < 1:
@@ -145,9 +149,13 @@ def get_min_avg_support(df):
     """
     support_list = df.tolist()
 
-    minimum_antec_support = min(support_list)
-    avg_atec_support = sum(support_list) / \
-        len(support_list)
+    try:
+        minimum_antec_support = min(support_list)
+        avg_atec_support = sum(support_list) / \
+                           len(support_list)
+    except:
+        minimum_antec_support= 0
+        avg_atec_support = 0
 
     lhs = str(minimum_antec_support) + ":" + str(avg_atec_support)
 

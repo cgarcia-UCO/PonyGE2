@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+
 from algorithm.parameters import params
 from fitness.supervised_learning.classification import classification
 from utilities.fitness.assoc_rules_measures import get_metrics
@@ -65,8 +67,14 @@ class subclassification(classification):
         weighted_gini_list = []
 
         for index in range(rules_length):
-            aux = x[eval(rules[index])]
-            labels = y[eval(rules[index])]
+            aux = pd.DataFrame()
+            labels = []
+
+            try: # If we try to get rows with (-1.0 <= (-3.0 + -0.01)), which can be generated, that would produce an error
+                aux = x[eval(rules[index])]
+                labels = y[eval(rules[index])]
+            except:
+                pass
 
             # Get the list of metrics.
             metrics = get_metrics(
