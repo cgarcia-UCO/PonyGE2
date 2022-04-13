@@ -47,9 +47,6 @@ def generational(new_pop, old_pop):
     # the best in the new population.
     new_pop.sort(reverse=True)
 
-    # Save elite average fitness in '.txt'.
-    get_average_fitness(new_pop[:params['POPULATION_SIZE']])#[:params['ELITE_SIZE']])
-
     # Return the top POPULATION_SIZE individuals of the new pop, including
     # elites.
     return new_pop[:params['POPULATION_SIZE']]

@@ -420,7 +420,7 @@ def get_soo_stats_v2(individuals, end):
         print_final_stats()
 
     # Get the best 'params['ELITE_SIZE']' individuals of the population.
-    if end and params['ELITE_SIZE'] != None:
+    if params['VERBOSE'] or (end and params['ELITE_SIZE'] != None):
         get_pop_metrics(individuals, params['ELITE_SIZE'])
 
 def get_moo_stats_v2(individuals, end):
@@ -701,6 +701,10 @@ def get_pop_metrics(individuals, elite_size):
 
     individuals.sort(reverse=True)
 
+    # Save elite average fitness in '.txt'.
+    get_average_fitness(individuals)#[:params['ELITE_SIZE']])
+
+
     phenotype_list = []
     fitness_list = []
 
@@ -852,11 +856,21 @@ def get_pop_metrics(individuals, elite_size):
     uncovered_patterns = get_uncovered_patterns(
         df_metrics_updated_filtered["Covered patterns"])
 
-    df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
-                            columns=[f"%LHS.Sup.\nMin:Avg", "%Conf.\nMin:Avg", "#rules", " |antecedent|\n" + str(n_antecedents), "Used attrs.", "%Attr.use freq.", "%Unc.pos."])
+    filename = path.join(params['FILE_PATH'], "metrics_extra.csv")
+
+    if path.exists(filename):
+        df_extra = pd.read_csv(filename)
+        df_extra = pd.concat([df_extra,
+                              pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
+                                           columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
+                                                    "Used attrs.", "%Attr.use freq.", "%Unc.pos."])],
+                             axis='index')
+    else:
+        df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
+                            columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
+                                                    "Used attrs.", "%Attr.use freq.", "%Unc.pos."])
 
     # Save extra metrics.
-    filename = path.join(params['FILE_PATH'], "metrics_extra.csv")
     df_extra.to_csv(filename, index=False)
 
     # Plot average fitness of the whole evolutionary process.

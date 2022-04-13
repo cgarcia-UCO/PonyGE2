@@ -203,7 +203,14 @@ def get_cond_in_antec(df):
     for rule in df:
         n_conditions.append(rule.count("&") + 1)
 
-    n_antecedents, antec_counts = np.unique(n_conditions, return_counts=True)
+
+    max_conditions = np.max(n_conditions)
+
+    n_antecedents = list(range(max_conditions + 1 ))
+
+    antec_counts = [n_conditions.count(i) for i in n_antecedents]
+
+    # n_antecedents, antec_counts = np.unique(n_conditions, return_counts=True)
 
     return n_antecedents, antec_counts
 
