@@ -175,8 +175,12 @@ def get_min_avg_confidence(df):
     """
     confidence_list = df.tolist()
 
-    minimum_conf = min(confidence_list)
-    avg_conf = sum(confidence_list) / len(confidence_list)
+    try:
+        minimum_conf = min(confidence_list)
+        avg_conf = sum(confidence_list) / len(confidence_list)
+    except:
+        minimum_conf = '-'
+        avg_conf = '-'
 
     conf = str(minimum_conf) + ":" + str(avg_conf)
 
@@ -253,14 +257,15 @@ def get_attr_stats(df, n_features):
         used_attr = "No rules obtained"
     else:
         # Attribute % use freq:
-        attr_max = (max(features_list) / n_rules) * 100
-        attr_q_3 = (np.quantile(features_list, .75) / n_rules) * 100
-        attr_median = (statistics.median(features_list) / n_rules) * 100
-        attr_q_2 = (np.quantile(features_list, .50) / n_rules) * 100
-        attr_min = (min(features_list) / n_rules) * 100
+        use_freq = {}
+        use_freq['attr_max'] = (max(features_list) / n_rules) * 100
+        use_freq['attr_q_3'] = (np.quantile(features_list, .75) / n_rules) * 100
+        use_freq['attr_median'] = (statistics.median(features_list) / n_rules) * 100
+        use_freq['attr_q_2'] = (np.quantile(features_list, .50) / n_rules) * 100
+        use_freq['attr_min'] = (min(features_list) / n_rules) * 100
 
-        use_freq = "{" + str(attr_max) + "," + str(attr_q_3) + "," + \
-            str(attr_median) + "," + str(attr_q_2) + "," + str(attr_min) + "}"
+        # use_freq = "{" + str(attr_max) + "," + str(attr_q_3) + "," + \
+        #     str(attr_median) + "," + str(attr_q_2) + "," + str(attr_min) + "}"
 
     return used_attr, use_freq
 

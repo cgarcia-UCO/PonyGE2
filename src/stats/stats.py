@@ -784,7 +784,7 @@ def get_pop_metrics(individuals, elite_size):
                             columns=["Phenotype", "Fitness"])
 
     # Print and save data into '.csv' file at 'results' path.
-    print(df_trees)
+    # print(df_trees)
     filename = path.join(params['FILE_PATH'], "trees.csv")
     df_trees.to_csv(filename)
     # print(df_trees.to_latex(index=True))
@@ -799,8 +799,8 @@ def get_pop_metrics(individuals, elite_size):
     # We want non-repeated rules.
     df_metrics = df_metrics.drop_duplicates(subset=["Rule"])
 
-    print()
-    print(df_metrics)
+    #print()
+    #print(df_metrics)
 
     # Save metrics.
     filename = path.join(params['FILE_PATH'], "metrics.csv")
@@ -861,14 +861,30 @@ def get_pop_metrics(individuals, elite_size):
     if path.exists(filename):
         df_extra = pd.read_csv(filename)
         df_extra = pd.concat([df_extra,
-                              pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
+                              pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq['attr_max'],
+                                             use_freq['attr_q_3'],
+                                             use_freq['attr_median'],
+                                             use_freq['attr_q_2'],
+                                             use_freq['attr_min'], uncovered_patterns]],
                                            columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
-                                                    "Used attrs.", "%Attr.use freq.", "%Unc.pos."])],
+                                                    "Used attrs.", "%Attr.use freq. Max",
+                                                    "%Attr.use freq. Q3",
+                                                    "%Attr.use freq. Median",
+                                                    "%Attr.use freq. Q1",
+                                                    "%Attr.use freq. Min", "%Unc.pos."])],
                              axis='index')
     else:
-        df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq, uncovered_patterns]],
+        df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq['attr_max'],
+                                             use_freq['attr_q_3'],
+                                             use_freq['attr_median'],
+                                             use_freq['attr_q_2'],
+                                             use_freq['attr_min'], uncovered_patterns]],
                             columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
-                                                    "Used attrs.", "%Attr.use freq.", "%Unc.pos."])
+                                                    "Used attrs.", "%Attr.use freq. Max",
+                                                    "%Attr.use freq. Q3",
+                                                    "%Attr.use freq. Median",
+                                                    "%Attr.use freq. Q1",
+                                                    "%Attr.use freq. Min", "%Unc.pos."])
 
     # Save extra metrics.
     df_extra.to_csv(filename, index=False)
