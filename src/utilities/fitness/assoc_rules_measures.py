@@ -208,11 +208,14 @@ def get_cond_in_antec(df):
         n_conditions.append(rule.count("&") + 1)
 
 
-    max_conditions = np.max(n_conditions)
+    try: # Perhaps, n_conditions if emtpy
+        max_conditions = np.max(n_conditions)
 
-    n_antecedents = list(range(max_conditions + 1 ))
+        n_antecedents = list(range(max_conditions + 1 ))
 
-    antec_counts = [n_conditions.count(i) for i in n_antecedents]
+        antec_counts = [n_conditions.count(i) for i in n_antecedents]
+    except:
+        n_antecedents, antec_counts = [], []
 
     # n_antecedents, antec_counts = np.unique(n_conditions, return_counts=True)
 
@@ -307,7 +310,11 @@ def get_uncovered_patterns(df):
         if i in positive_patterns_list:
             covered_and_positive += 1
 
-    not_covered_positives = (
-        (covered_patterns - covered_and_positive) / covered_patterns) * 100
+    try:# FIXED creo que esto no es así. Debe ser el ratio de positivos no cubiertos. Quizás ((positivos - cubiertos y positivos / positivos)
+        not_covered_positives = (
+            (covered_patterns - covered_and_positive) / covered_patterns) * 100
+        not_covered_positives = ((positive_patterns - covered_and_positive) / positive_patterns) * 100
+    except:
+        not_covered_positives = 100
 
     return not_covered_positives

@@ -35,7 +35,7 @@ def step(individuals):
 
     # Diversification.
     if params['SHARING_FITNESS']:
-        individuals = diversification(individuals)
+        individuals = diversification(new_pop)
 
     # Replace the old population with the new population.
     individuals = replacement(new_pop, individuals)

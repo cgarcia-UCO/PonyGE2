@@ -5,6 +5,47 @@ from sklearn.metrics import DistanceMetric
 
 from algorithm.parameters import params
 
+def get_feature_importances_from_inds(individuals):
+    importances = []
+    features = params['FITNESS_FUNCTION'].training_in.columns
+    num_features = len(features)
+    null_importances = np.zeros(num_features)
+
+    for ind in individuals:
+        # Just for valid individuals; invalid individuals has phenotype = None and fitness = nan.
+        if ind.invalid != True and np.isnan(ind.fitness) != True:
+            importances.append(get_features_importances(ind.tree))
+        else:
+            importances.append(null_importances)
+
+    return importances
+
+def get_features_importances(tree, importances = None):
+    features = params['FITNESS_FUNCTION'].training_in.columns
+
+    if not isinstance(importances, np.ndarray) and importances == None:
+        num_features = len(features)
+        importances = np.zeros(num_features)
+        importances, _ = get_features_importances(tree, importances)
+        return importances
+    else:
+        if tree.children[0].root == 'np.where(':
+
+            _, this_condition, _, _, \
+            _ = tree.children[1].get_tree_info(params['BNF_GRAMMAR'].non_terminals.keys(), [], [])
+            these_features = [(index,i) for index,i in enumerate(features) for j in this_condition if '\''+i+'\'' in j]
+
+            importances, num_leaves_left = get_features_importances(tree.children[3], importances)
+            importances, num_leaves_right = get_features_importances(tree.children[5], importances)
+            num_leaves = num_leaves_right + num_leaves_left
+
+            for feature in [i[0] for i in these_features]:
+                importances[feature] += num_leaves
+            return importances, num_leaves
+        else:
+            return importances, 1
+
+
 
 def get_features_indexes(phenotype):
     """
@@ -269,6 +310,7 @@ def compute_crowding(A, A_flat, n_trees, procedure):
     if procedure == "distance":
         # Use percentile .25 as threshold.
         p_25 = np.percentile(A_flat, 25)
+        p_25 = np.max(A_flat)
 
         crowding = np.zeros(n_trees)
         for i in reversed(range(n_trees)):
@@ -312,11 +354,18 @@ def update_fitness(individuals, crowding, n_trees):
             break
 
     # Update fitness.
+    values = []
     for i in range(n_trees):
         # Some individuals are not valid, so that, they have fitness = 'np.nan'.
         # Just taking in account those whose fitness is a number.
         if not np.isnan(individuals[i].fitness):
             individuals[i].fitness += (crowding[i] * penalty)
+            values.append(individuals[i].fitness)
+            # if crowding[i] > 0:
+            #     individuals[i].fitness = np.nan
+            #     individuals[i].invalid = True
+
+    # print('VALUES', np.mean(np.array(values)))
 
 
 def diversification(individuals):
@@ -348,22 +397,43 @@ def diversification(individuals):
     n_dataset_features = len(x.iloc[0, :])
     n_trees = len(individuals)
 
-    features = get_ind_used_features(individuals, n_dataset_features)
+    if params['SHARING_PROCEDURE'] == 'importance disimilarity':
+        importances = get_feature_importances_from_inds(individuals)
+        A, A_flat = ratio_new_rules(importances)
+        crowding = compute_crowding(A, A_flat, n_trees, procedure='distance')
+    else:
+        features = get_ind_used_features(individuals, n_dataset_features)
 
-    # Compute distances/similarities. Use params["SHARING_PROCEDURE"] for setting
-    # the parameter: "distance" for distance matrix and "similarity" for similarity
-    # matrix.
-    if params["SHARING_PROCEDURE"] == "distance":
-        A, A_flat = compute_ind_distances(features, n_trees)
-    if params["SHARING_PROCEDURE"] == "similarity":
-        #A, A_flat = compute_ind_similarities(features, n_trees)
-        A, A_flat = new_similarity_approach(features, n_trees)
+        # Compute distances/similarities. Use params["SHARING_PROCEDURE"] for setting
+        # the parameter: "distance" for distance matrix and "similarity" for similarity
+        # matrix.
+        if params["SHARING_PROCEDURE"] == "distance":
+            A, A_flat = compute_ind_distances(features, n_trees)
+        if params["SHARING_PROCEDURE"] == "similarity":
+            #A, A_flat = compute_ind_similarities(features, n_trees)
+            A, A_flat = new_similarity_approach(features, n_trees)
 
-    # Compute crowding.
-    crowding = compute_crowding(
-        A, A_flat, n_trees, procedure=params["SHARING_PROCEDURE"])
+        # Compute crowding.
+        crowding = compute_crowding(
+            A, A_flat, n_trees, procedure=params["SHARING_PROCEDURE"])
 
     # Update fitness.
     update_fitness(individuals, crowding, n_trees)
 
     return individuals
+
+def ratio_new_rules(importances):
+    num_trees = len(importances)
+    A = np.zeros((num_trees, num_trees))
+
+    for i, imp_i in zip(range(num_trees), importances):
+        for j, imp_j in zip(range(i+1,num_trees), importances[i+1:]):
+            differences = np.sum(np.abs(imp_i - imp_j))
+            max_num_rules = min(np.sum(imp_i), np.sum(imp_j))
+            try:
+                A[i,j] = differences / max_num_rules
+            except:
+                A[i,j] = 0
+            A[j,i] = A[i,j]
+
+    return A, A.flatten()

@@ -787,6 +787,7 @@ def get_pop_metrics(individuals, elite_size):
     # print(df_trees)
     filename = path.join(params['FILE_PATH'], "trees.csv")
     df_trees.to_csv(filename)
+    n_trees = len(df_trees)
     # print(df_trees.to_latex(index=True))
 
     #####################################################################
@@ -861,12 +862,12 @@ def get_pop_metrics(individuals, elite_size):
     if path.exists(filename):
         df_extra = pd.read_csv(filename)
         df_extra = pd.concat([df_extra,
-                              pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq['attr_max'],
+                              pd.DataFrame([[lhs, conf, n_trees, n_rules, antec_counts, used_attr, use_freq['attr_max'],
                                              use_freq['attr_q_3'],
                                              use_freq['attr_median'],
                                              use_freq['attr_q_2'],
                                              use_freq['attr_min'], uncovered_patterns]],
-                                           columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
+                                           columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#trees", "#rules", "|antecedent|",# + str(n_antecedents),
                                                     "Used attrs.", "%Attr.use freq. Max",
                                                     "%Attr.use freq. Q3",
                                                     "%Attr.use freq. Median",
@@ -874,12 +875,12 @@ def get_pop_metrics(individuals, elite_size):
                                                     "%Attr.use freq. Min", "%Unc.pos."])],
                              axis='index')
     else:
-        df_extra = pd.DataFrame([[lhs, conf, n_rules, antec_counts, used_attr, use_freq['attr_max'],
+        df_extra = pd.DataFrame([[lhs, conf, n_trees, n_rules, antec_counts, used_attr, use_freq['attr_max'],
                                              use_freq['attr_q_3'],
                                              use_freq['attr_median'],
                                              use_freq['attr_q_2'],
                                              use_freq['attr_min'], uncovered_patterns]],
-                            columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#rules", "|antecedent|",# + str(n_antecedents),
+                            columns=[f"%LHS.Sup.(Min:Avg)", "%Conf.(Min:Avg)", "#trees", "#rules", "|antecedent|",# + str(n_antecedents),
                                                     "Used attrs.", "%Attr.use freq. Max",
                                                     "%Attr.use freq. Q3",
                                                     "%Attr.use freq. Median",
