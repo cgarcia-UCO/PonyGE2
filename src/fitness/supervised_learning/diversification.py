@@ -429,7 +429,8 @@ def ratio_new_rules(importances):
     for i, imp_i in zip(range(num_trees), importances):
         for j, imp_j in zip(range(i+1,num_trees), importances[i+1:]):
             differences = np.sum(np.abs(imp_i - imp_j))
-            max_num_rules = min(np.sum(imp_i), np.sum(imp_j))
+            #max_num_rules = min(np.sum(imp_i), np.sum(imp_j))
+            max_num_rules = 1
             try:
                 A[i,j] = differences / max_num_rules
             except:

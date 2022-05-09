@@ -28,5 +28,5 @@ SELECTION:              tournament
 TOURNAMENT_SIZE:        2
 VERBOSE: 				True
 SHARING_FITNESS:		True
-SHARING_PROCEDURE:		similarity
+SHARING_PROCEDURE:		importance disimilarity
 EXPERIMENT_NAME:        prueba_con_codigo_Ventura
