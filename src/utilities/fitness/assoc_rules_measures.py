@@ -39,13 +39,17 @@ def get_metrics(antec_eval, y, consec, visualize):
 
     # If there are no covered targets, return 'np.nan'.
     if len(covered_targets) < 1:
-        return [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
+        return [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0]
 
     antec_support = sum(antec_eval) / len(antec_eval)
     consec_support = sum(y == consec) / len(y)
     rule_support = sum(covered_targets == consec) / len(y)
 
-    rule_precision = sum(covered_targets == consec) / len(covered_targets)
+    if len(covered_targets) == 0:
+        rule_precision = 0
+    else:
+        rule_precision = sum(covered_targets == consec) / len(covered_targets)
+
     rule_recall = sum(covered_targets == consec) / sum(y == consec)
     rule_lift = rule_precision / consec_support
     rule_leverage = rule_support - antec_support * consec_support
