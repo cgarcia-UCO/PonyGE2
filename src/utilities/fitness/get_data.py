@@ -145,9 +145,8 @@ def read_arff(file):
             content = content.replace('ñ', 'n')
             with io.StringIO(content) as f2:
                 data_metadata = arff.loadarff(f2)
+                data,metadata = data_metadata
 
-    data,metadata = data_metadata
-    # arff.dump(data_metadata, f)
     data = pd.DataFrame(data)
     data = \
         data.apply(lambda x: x.str.decode('utf-8') if x.dtype == 'object' else x)
@@ -189,7 +188,7 @@ def get_data(train, test):
             except:
                 test = None
 
-        if params['CROSS_VALIDATION'] and isinstance(test, int):
+        if 'CROSS_VALIDATION' in params and params['CROSS_VALIDATION'] and isinstance(test, int):
             random_state = None
 
             assert 'CROSS_VALIDATION_SEED' in params
@@ -212,5 +211,6 @@ def get_data(train, test):
         # Read in the training and testing datasets from the specified files.
         training_in, training_out, test_in, \
         test_out = get_Xy_train_test_separate(train_set, test_set, skip_header=1)
+        metadata = None
 
     return training_in, training_out, test_in, test_out, metadata

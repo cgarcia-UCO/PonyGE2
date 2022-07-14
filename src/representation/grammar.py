@@ -677,14 +677,15 @@ class Grammar(object):
             num_processed_features = 0
             first_feature = params['FITNESS_FUNCTION'].get_first_categorical_feature()
 
-            if params['EXPERIMENT_NAME'].startswith('ponyge2'): #TODO eliminar
+            if 'EXPERIMENT_NAME' in params and \
+                params['EXPERIMENT_NAME'] is not None and \
+                    params['EXPERIMENT_NAME'].startswith('ponyge2'): #TODO eliminar
                 first_feature = 0
 
             inputs = params['FITNESS_FUNCTION'].training_in
             if first_feature is not None:
-                # TODO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] != 'ponyge2'
-                while (not params['EXPERIMENT_NAME'].startswith('ponyge2')) and \
-                        first_feature < inputs.shape[1] and \
+                # TODO YA ELIMINO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] != 'ponyge2' ((not params['EXPERIMENT_NAME'].startswith('ponyge2')) and \)
+                while   first_feature < inputs.shape[1] and \
                         (params['FITNESS_FUNCTION'].num_of_different_values(first_feature) <= 1 or
                          not params['FITNESS_FUNCTION'].is_ithfeature_categorical(first_feature)):
                     first_feature += 1
@@ -697,16 +698,16 @@ class Grammar(object):
                     tail = '\'\"]' if isinstance(inputs, pd.DataFrame) else ']'
                     grammar_content.append(header + inputs.columns[first_feature] + tail + ' == <values_feature_' + str(first_feature) + '>)')
                     for i in range(first_feature + 1, inputs.shape[1]):
-                        # TODO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] == 'ponyge2'
-                        if params['EXPERIMENT_NAME'].startswith('ponyge2') or (params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                        # TODO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] == 'ponyge2' YA ELIMINADO params['EXPERIMENT_NAME'].startswith('ponyge2') or
+                        if (params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
                                 params['FITNESS_FUNCTION'].num_of_different_values(i) > 1):
                             grammar_content.append(' | ' + header + inputs.columns[i] + tail + ' == <values_feature_' + str(i) + '>)')
 
                     grammar_content.append('\n')
 
                     for i in range(first_feature, inputs.shape[1]):
-                        # TODO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] == 'ponyge2'
-                        if params['EXPERIMENT_NAME'].startswith('ponyge2') or (params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
+                        # TODO eliminar la siguiente primera condición params['EXPERIMENT_NAME'] == 'ponyge2' YA ELIMINADO params['EXPERIMENT_NAME'].startswith('ponyge2') or
+                        if (params['FITNESS_FUNCTION'].is_ithfeature_categorical(i) and\
                                 params['FITNESS_FUNCTION'].num_of_different_values(i) > 1):
                             self._generate_values_feature(i, grammar_content)
                             num_processed_features += 1

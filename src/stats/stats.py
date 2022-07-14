@@ -315,13 +315,20 @@ def get_soo_stats_v2(individuals, end):
             yhat_test = eval(trackers.best_ever.phenotype_consec_consts)
         else:
             x = x_train
-            yhat_train = eval(trackers.best_ever.phenotype)
+            try:
+                yhat_train = eval(trackers.best_ever.phenotype)
+            except:
+                yhat_train = None
             x = x_test
-            yhat_test = eval(trackers.best_ever.phenotype)
+            try:
+                yhat_test = eval(trackers.best_ever.phenotype)
+            except:
+                yhat_test = None
 
-        for i in eval(params['LISTENERS']):
-            trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
-            trackers.aux['test_'+i.__name__+"_best_ever"] = i(y_test,yhat_test)
+        if 'LISTENERS' in params:
+            for i in eval(params['LISTENERS']):
+                trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
+                trackers.aux['test_'+i.__name__+"_best_ever"] = i(y_test,yhat_test)
 
     if end or params['VERBOSE'] or not params['DEBUG']:
         # Update all stats.
@@ -333,32 +340,35 @@ def get_soo_stats_v2(individuals, end):
             trackers.best_fitness_list.append(trackers.best_ever.fitness)
 
             if hasattr(params['FITNESS_FUNCTION'], "training_test"):
-                for i in eval(params['LISTENERS']):
-                    if not 'test_'+i.__name__+"_best_ever_list" in trackers.aux:
-                        trackers.aux['test_'+i.__name__+"_best_ever_list"] = []
-                        trackers.aux['train_' + i.__name__ + "_best_ever_list"] = []
-                    trackers.aux['train_' + i.__name__ + "_best_ever_list"].append(trackers.aux['train_' + i.__name__ + "_best_ever"])
+                if 'LISTENERS' in params:
+                    for i in eval(params['LISTENERS']):
+                        if not 'test_'+i.__name__+"_best_ever_list" in trackers.aux:
+                            trackers.aux['test_'+i.__name__+"_best_ever_list"] = []
+                            trackers.aux['train_' + i.__name__ + "_best_ever_list"] = []
+                        trackers.aux['train_' + i.__name__ + "_best_ever_list"].append(trackers.aux['train_' + i.__name__ + "_best_ever"])
 
-                    trackers.aux['test_' + i.__name__ + "_best_ever_list"].append(
-                        trackers.aux['test_' + i.__name__ + "_best_ever"])
+                        trackers.aux['test_' + i.__name__ + "_best_ever_list"].append(
+                            trackers.aux['test_' + i.__name__ + "_best_ever"])
 
         if params['VERBOSE'] or end:
             save_plot_from_data(trackers.best_fitness_list, "best_fitness")
 
             if hasattr(params['FITNESS_FUNCTION'], 'training_test'):
-                for i in eval(params['LISTENERS']):
-                    to_plot = [[i,j] for i,j in zip(trackers.aux['train_'+i.__name__+"_best_ever_list"],
-                                                    trackers.aux['test_'+i.__name__+"_best_ever_list"])]
-                    save_plot_from_data(to_plot,
-                                        i.__name__, label=['train', 'test'])
-                    save_values_to_file(to_plot,
-                                        i.__name__ + ".txt", header=['train', 'test'])
+                if 'LISTENERS' in params:
+                    for i in eval(params['LISTENERS']):
+                        to_plot = [[i,j] for i,j in zip(trackers.aux['train_'+i.__name__+"_best_ever_list"],
+                                                        trackers.aux['test_'+i.__name__+"_best_ever_list"])]
+                        save_plot_from_data(to_plot,
+                                            i.__name__, label=['train', 'test'])
+                        save_values_to_file(to_plot,
+                                            i.__name__ + ".txt", header=['train', 'test'])
             else:
-                for i in eval(params['LISTENERS']):
-                    save_plot_from_data(trackers.aux['train_'+i.__name__+"_best_ever_list"],
-                                        i.__name__, label=['train'])
-                    save_values_to_file(trackers.aux['train_'+i.__name__+"_best_ever_list"],
-                                        i.__name__ + ".txt", header=['train'])
+                if 'LISTENERS' in params:
+                    for i in eval(params['LISTENERS']):
+                        save_plot_from_data(trackers.aux['train_'+i.__name__+"_best_ever_list"],
+                                            i.__name__, label=['train'])
+                        save_values_to_file(trackers.aux['train_'+i.__name__+"_best_ever_list"],
+                                            i.__name__ + ".txt", header=['train'])
 
 
     # Print statistics
