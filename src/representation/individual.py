@@ -49,9 +49,9 @@ class Individual(object):
         greater than the comparison individual.
         """
 
-        if np.isnan(self.fitness).any():
+        if self.fitness is None or np.isnan(self.fitness).any():
             return True
-        elif np.isnan(other.fitness).any():
+        elif other.fitness is None or np.isnan(other.fitness).any():
             return False
         else:
             return self.fitness < other.fitness if params[
