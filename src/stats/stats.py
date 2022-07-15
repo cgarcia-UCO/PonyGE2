@@ -611,7 +611,7 @@ def update_stats(individuals, end):
 
     if not hasattr(params['FITNESS_FUNCTION'], 'multi_objective'):
         # Fitness Stats
-        fitnesses = [i.fitness for i in individuals]
+        fitnesses = [i.fitness for i in individuals if i.fitness is not None]
         stats['ave_fitness'] = np.nanmean(fitnesses, axis=0)
         stats['best_fitness'] = trackers.best_ever.fitness
 
