@@ -72,14 +72,14 @@ class supervised_learning(base_ff):
             raise ValueError("Unknown dist: " + dist)
 
         ################3
-        #TODO esto no irá en la versión final
-        rules = nested_conds_2_rules_list(ind.phenotype)
-
-        aux = x[eval(rules[0])]
-        labels = y[eval(rules[0])]
-
-        # Get labels probabilities.
-        probabilities = get_labels_prob(labels)
+        #TODO esto no irá en la versión final. Creo que puse esto para evaluar el gini reduction, pero no está terminado
+        # rules = nested_conds_2_rules_list(ind.phenotype)
+        #
+        # aux = x[eval(rules[0])]
+        # labels = y[eval(rules[0])]
+        #
+        # # Get labels probabilities.
+        # probabilities = get_labels_prob(labels)
         #######################
 
         shape_mismatch_txt = """Shape mismatch between y and yhat. Please check

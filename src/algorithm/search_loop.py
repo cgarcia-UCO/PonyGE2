@@ -33,7 +33,7 @@ def search_loop():
     get_stats(individuals)
 
     # Diversification.
-    if params['SHARING_FITNESS']:
+    if 'SHARING_FITNESS' in params and params['SHARING_FITNESS']:
         individuals = diversification(individuals)
 
     # Traditional GE

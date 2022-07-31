@@ -258,3 +258,10 @@ def accuracy(y, yhat):
     return (np.sum(y == yhat) / len(y))
 
 accuracy.maximise = True
+
+def pos_covered_percentage(y, yhat):
+    positive_label = 'Si'
+    pos_bool_array = y == positive_label
+    num_pos_labels = sum(pos_bool_array)
+    num_pos_covered = sum(yhat[pos_bool_array] == positive_label)
+    return num_pos_covered / num_pos_labels

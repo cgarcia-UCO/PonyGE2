@@ -13,7 +13,7 @@ from utilities.stats.file_io import save_best_ind_to_file, \
     save_first_front_to_file, save_stats_headers, save_stats_to_file, save_values_to_file
 from utilities.stats.save_plots import save_pareto_fitness_plot, \
     save_plot_from_data
-from utilities.fitness.error_metric import f1_score, accuracy
+from utilities.fitness.error_metric import f1_score, accuracy, pos_covered_percentage
 
 from utilities.fitness.assoc_rules_measures import get_cond_in_antec, get_attr_stats, get_metrics, get_min_avg_confidence, get_min_avg_support, get_uncovered_patterns, update_metrics
 from utilities.misc.nested_conds_2_rules_list import nested_conds_2_rules_list
@@ -313,6 +313,15 @@ def get_soo_stats_v2(individuals, end):
         trackers.best_ever = best
 
     # Compute fitness on test for every generation
+    if 'LISTENERS' in params:
+        x_train = params['FITNESS_FUNCTION'].training_in
+        x = x_train
+        y_train = params['FITNESS_FUNCTION'].training_exp
+        yhat_train = eval(trackers.best_ever.phenotype)
+
+        for i in eval(params['LISTENERS']):
+            trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
+
     if hasattr(params['FITNESS_FUNCTION'], "training_test"):
         trackers.test_first_best_ever = params['FITNESS_FUNCTION'](trackers.best_ever, dist='test')
 
@@ -333,7 +342,6 @@ def get_soo_stats_v2(individuals, end):
 
         if 'LISTENERS' in params:
             for i in eval(params['LISTENERS']):
-                trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
                 trackers.aux['test_'+i.__name__+"_best_ever"] = i(y_test,yhat_test)
 
     if end or params['VERBOSE'] or not params['DEBUG']:
@@ -355,6 +363,13 @@ def get_soo_stats_v2(individuals, end):
 
                         trackers.aux['test_' + i.__name__ + "_best_ever_list"].append(
                             trackers.aux['test_' + i.__name__ + "_best_ever"])
+            else:
+                if 'LISTENERS' in params:
+                    for i in eval(params['LISTENERS']):
+                        if not 'train_' + i.__name__ + "_best_ever_list" in trackers.aux:
+                            trackers.aux['train_' + i.__name__ + "_best_ever_list"] = []
+                        trackers.aux['train_' + i.__name__ + "_best_ever_list"].append(
+                            trackers.aux['train_' + i.__name__ + "_best_ever"])
 
         if params['VERBOSE'] or end:
             save_plot_from_data(trackers.best_fitness_list, "best_fitness")
@@ -854,8 +869,7 @@ def get_pop_metrics(individuals, elite_size):
         df_metrics_updated_filtered["Rule"], n_features)
 
     # Uncovered patterns:
-    uncovered_patterns = get_uncovered_patterns(
-        df_metrics_updated_filtered["Covered patterns"])
+    uncovered_patterns = -1 # get_uncovered_patterns(df_metrics_updated_filtered["Covered patterns"])
 
     filename = path.join(params['FILE_PATH'], "metrics_extra.csv")
 
