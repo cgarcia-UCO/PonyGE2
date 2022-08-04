@@ -1,8 +1,10 @@
 from copy import copy
 from sys import stdout
 from time import time
+from os import path
 
 import numpy as np
+import pandas as pd
 from algorithm.parameters import params
 from utilities.algorithm.NSGA2 import compute_pareto_metrics, compute_pareto_metrics_v2
 from utilities.algorithm.state import create_state
@@ -301,6 +303,15 @@ def get_soo_stats_v2(individuals, end):
         trackers.best_ever = best
 
     # Compute fitness on test for every generation
+    if 'LISTENERS' in params:
+        x_train = params['FITNESS_FUNCTION'].training_in
+        x = x_train
+        y_train = params['FITNESS_FUNCTION'].training_exp
+        yhat_train = eval(trackers.best_ever.phenotype)
+
+        for i in eval(params['LISTENERS']):
+            trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
+
     if hasattr(params['FITNESS_FUNCTION'], "training_test"):
         trackers.test_first_best_ever = params['FITNESS_FUNCTION'](trackers.best_ever, dist='test')
 
@@ -327,7 +338,6 @@ def get_soo_stats_v2(individuals, end):
 
         if 'LISTENERS' in params:
             for i in eval(params['LISTENERS']):
-                trackers.aux['train_' + i.__name__ + "_best_ever"] = i(y_train, yhat_train)
                 trackers.aux['test_'+i.__name__+"_best_ever"] = i(y_test,yhat_test)
 
     if end or params['VERBOSE'] or not params['DEBUG']:
@@ -349,6 +359,13 @@ def get_soo_stats_v2(individuals, end):
 
                         trackers.aux['test_' + i.__name__ + "_best_ever_list"].append(
                             trackers.aux['test_' + i.__name__ + "_best_ever"])
+            else:
+                if 'LISTENERS' in params:
+                    for i in eval(params['LISTENERS']):
+                        if not 'train_' + i.__name__ + "_best_ever_list" in trackers.aux:
+                            trackers.aux['train_' + i.__name__ + "_best_ever_list"] = []
+                        trackers.aux['train_' + i.__name__ + "_best_ever_list"].append(
+                            trackers.aux['train_' + i.__name__ + "_best_ever"])
 
         if params['VERBOSE'] or end:
             save_plot_from_data(trackers.best_fitness_list, "best_fitness")
@@ -369,7 +386,6 @@ def get_soo_stats_v2(individuals, end):
                                             i.__name__, label=['train'])
                         save_values_to_file(trackers.aux['train_'+i.__name__+"_best_ever_list"],
                                             i.__name__ + ".txt", header=['train'])
-
 
     # Print statistics
     if params['VERBOSE'] and not end:
@@ -573,9 +589,9 @@ def update_stats(individuals, end):
         # Time Stats
         trackers.time_list.append(time() - stats['time_adjust'])
         stats['time_taken'] = trackers.time_list[-1] - \
-                              trackers.time_list[-2]
+            trackers.time_list[-2]
         stats['total_time'] = trackers.time_list[-1] - \
-                              trackers.time_list[0]
+            trackers.time_list[0]
 
     # Population Stats
     stats['total_inds'] = params['POPULATION_SIZE'] * (stats['gen'] + 1)
@@ -583,7 +599,7 @@ def update_stats(individuals, end):
     if params['CACHE']:
         stats['unique_inds'] = len(trackers.cache)
         stats['unused_search'] = 100 - stats['unique_inds'] / \
-                                 stats['total_inds'] * 100
+            stats['total_inds'] * 100
 
     # Genome Stats
     genome_lengths = [len(i.genome) for i in individuals]

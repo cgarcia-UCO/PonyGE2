@@ -1,0 +1,31 @@
+CACHE:                  True
+CODON_SIZE:             100000
+CROSSOVER:              multiple_x_operators
+CROSS_OPERATORS:        [subtree, prune_if_else_tree]
+SIMPLIFY_MIN_PATTERNS:  0
+MIN_GINI_REDUCTION:     0.0075
+CROSSOVER_PROBABILITY:  0.75
+CROSS_VALIDATION:       10
+DATASET_TRAIN:          diabetes.arff
+DEBUG:                  False
+GENERATIONS:            500
+MAX_GENOME_LENGTH:      500
+GRAMMAR_FILE:           supervised_learning/cec_experiments/tree_complete_grammar_no_arit_expressions.bnf
+INITIALISATION:         PI_grow
+INVALID_SELECTION:      False
+MAX_INIT_TREE_DEPTH:    8
+MAX_TREE_DEPTH:         20
+MUTATION:               multiple_mut_operators
+MUTATION_OPERATORS:     [subtree, prune_if_else_tree]
+POPULATION_SIZE:        100
+FITNESS_FUNCTION:       supervised_learning.classification
+ERROR_METRIC:           accuracy
+REPLACEMENT:            generational
+LISTENERS:              [accuracy, f1_score]
+SELECTION:              tournament
+TOURNAMENT_SIZE:        2
+VERBOSE:                True
+OPTIMIZE_CONSTANTS:     False
+EXPERIMENT_NAME:        cec_base_alg_ff_accuracy_no_simplicity_no_arit_expressions
+CORES:                  3
+IMPUTE_MISSING:         True
