@@ -26,6 +26,6 @@ SELECTION:              tournament
 TOURNAMENT_SIZE:        2
 VERBOSE:                True
 OPTIMIZE_CONSTANTS:     False
-EXPERIMENT_NAME:        cec_base_alg_ff_accuracy_no_simplicity_no_arit_expressions
+EXPERIMENT_NAME:        diabetes
 CORES:                  3
 IMPUTE_MISSING:         True
