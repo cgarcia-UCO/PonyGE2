@@ -183,8 +183,11 @@ def save_values_to_file(values, filename, header=None):
         savefile.write("\n")
 
         for i in values:
-            for j in i:
-                savefile.write(str(j)+"; ")
+            if type(i) == list:
+                for j in i:
+                    savefile.write(str(j)+"; ")
+            else:
+                savefile.write(str(i))
             savefile.write("\n")
 
     else:
