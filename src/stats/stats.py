@@ -14,6 +14,7 @@ from utilities.stats.file_io import save_best_ind_to_file, \
 from utilities.stats.save_plots import save_pareto_fitness_plot, \
     save_plot_from_data
 from utilities.fitness.error_metric import f1_score, accuracy
+from utilities.representation.assoc_rules import RuleSet, AssocRules_Stats
 
 """Algorithm statistics"""
 stats = {
@@ -391,6 +392,9 @@ def get_soo_stats_v2(individuals, end):
     if params['VERBOSE'] and not end:
         print_generation_stats()
 
+        if 'ASSOC_RULES_STATS' in params:
+            print_assoc_rules_stats(individuals, params['ASSOC_RULES_STATS'])
+
     elif not params['SILENT']:
         # Print simple display output.
         perc = stats['gen'] / (params['GENERATIONS'] + 1) * 100
@@ -688,3 +692,27 @@ def print_final_moo_stats():
     for ind in trackers.best_ever:
         print(" ", ind)
     print_generation_stats()
+
+def print_assoc_rules_stats(individuals, filename):
+    # Obtein and evaluate the rules
+    rules = RuleSet()
+
+    for ind in individuals:
+        if ind.invalid == False:
+            rules.read_tree(ind.tree)
+
+    if 'ASSOC_CONF_FILTER' not in params:
+        conf_filtering = 0.7
+    else:
+        conf_fitlering = params['ASSOC_CONF_FILTER']
+
+    # Filter the rules
+    rules.filter_duplicates()
+    rules.filter_by_confidence(params['FITNESS_FUNCTION'].training_in,
+                               params['FITNESS_FUNCTION'].training_exp, conf_fitlering)
+
+    # Evaluación
+    with open(path.join(params['FILE_PATH'],filename), "a") as f:
+        AssocRules_Stats().print_stats(rules.rules,
+                                   params['FITNESS_FUNCTION'].training_in,
+                                   params['FITNESS_FUNCTION'].training_exp, f)

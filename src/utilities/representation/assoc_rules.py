@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 from algorithm.parameters import params, set_params
+from utilities.metrics.assoc_rules_metrics import AssocRules_Stats
 
 
 class Rule:
@@ -16,16 +17,63 @@ class Rule:
     def set_consequent(self, consequent):
         self.consequent = consequent
 
+    def get_consequent(self):
+        return self.consequent
+
     def __str__(self):
         return '&'.join(self.conditions) + ' => ' + self.consequent
 
     def get_antecedent(self):
         return '&'.join(self.conditions)
 
+    def __eq__(self, other):
+        if isinstance(other, Rule):
+            if self.consequent != other.consequent:
+                return False
+            else:
+                # I have not considered comparing the lengths becase a rule might have the same condition
+                # multiple times. I think that simplifying the rule at construction could be interesting
+                for i in self.conditions:
+                    found = len([j for j in other.conditions if j == i])
+
+                    if found <= 0:
+                        return False
+
+                for i in other.conditions:
+                    found = len([j for j in self.conditions if j == i])
+
+                    if found <= 0:
+                        return False
+
+                return True
+
+        else:
+            return NotImplemented
+
 class RuleSet:
 
     def __init__(self):
         self.rules = []
+
+    def filter_duplicates(self):
+
+        removing_indexes = set()
+
+        for index_i, i in enumerate(self.rules):
+            for index_j, j in enumerate(self.rules[index_i+1:]):
+                if j == i:
+                    removing_indexes.add(index_j)
+
+        init_num_rules = len(self.rules)
+        self.rules = [i for index, i in enumerate(self.rules) if index not in removing_indexes]
+        assert len(self.rules) == init_num_rules - len(removing_indexes)
+
+    def filter_by_confidence(self, x, y, threshold):
+        stats_evaluator = AssocRules_Stats()
+        confidence_values = stats_evaluator.compute_confidence(self.rules, x, y)
+
+        self.rules = [i for (index, i), confidence in zip(enumerate(self.rules), confidence_values)
+                      if confidence >= threshold]
 
     def fill_rules(self, recursive_list_rules):
 
@@ -143,15 +191,25 @@ if __name__ == "__main__":
 
     # Run evolution
     individuals = params['SEARCH_LOOP']()
+
+    # Obtein and evaluate the rules
     rules = RuleSet()
 
     for ind in individuals:
         if ind.invalid == False:
             rules.read_tree(ind.tree)
 
-    # Evaluación
-    y = params['FITNESS_FUNCTION'].training_exp
-    x = params['FITNESS_FUNCTION'].training_in
+    # Filter the rules
+    if 'ASSOC_CONF_FILTER' not in params:
+        conf_filtering = 0.7
+    else:
+        conf_filtering = params['ASSOC_CONF_FILTER']
 
-    for i in rules.rules:
-        print(sum(eval(i.get_antecedent())))
+    rules.filter_duplicates()
+    rules.filter_by_confidence(params['FITNESS_FUNCTION'].training_in,
+                                   params['FITNESS_FUNCTION'].training_exp,conf_filtering)
+
+    # Evaluación
+    AssocRules_Stats().print_stats(rules.rules,
+                                   params['FITNESS_FUNCTION'].training_in,
+                                   params['FITNESS_FUNCTION'].training_exp)
