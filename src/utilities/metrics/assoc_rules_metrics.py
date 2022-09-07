@@ -26,14 +26,17 @@ class AssocRules_Stats:
             true_class = y[covered_patterns]
             predicted_class = i.get_consequent().replace('\'','')
             hits = true_class == predicted_class
-            values.append(sum(hits) / len(covered_patterns))
+            try:
+                values.append(sum(hits) / sum(covered_patterns))
+            except ZeroDivisionError:
+                values.append(0)
 
         return values
 
     def get_lengths(self, rules):
         values = []
         num_rules_processed = 0
-        iterator = 1
+        iterator = 0
 
         while num_rules_processed < len(rules):
             new_rules = [i for i in rules if len(i.conditions) == iterator]
@@ -83,8 +86,11 @@ class AssocRules_Stats:
 
             confidence_values = self.compute_confidence(rules, x, y)
             min_confidence = min(confidence_values)
+
+            assert min_confidence >= 0.5 # TODO quitar al final, por si no se usa prune_if_else_tree
+
             avg_confidece = np.mean(confidence_values)
-            max_confidence = max(confidence_values)
+            # max_confidence = max(confidence_values)
 
             num_rules_per_length = self.get_lengths(rules)
 
@@ -96,8 +102,7 @@ class AssocRules_Stats:
 
             f.write("{:.1f}".format(min_support*100)+":"+"{:.1f}".format(avg_support*100)+'\t')
 
-            f.write("{:.1f}".format(min_confidence*100)+":"+"{:.1f}".format(avg_confidece*100)+":"+
-                    "{:.1f}".format(max_confidence*100)+'\t')
+            f.write("{:.1f}".format(min_confidence*100)+":"+"{:.1f}".format(avg_confidece*100)+'\t')
 
             f.write(str(len(rules))+'\t')
 
@@ -115,6 +120,7 @@ class AssocRules_Stats:
         except:
             if len(rules) > 0:
                 f.write('Error')
+                raise
             else:
                 f.write('No rules')
         f.write("\n")

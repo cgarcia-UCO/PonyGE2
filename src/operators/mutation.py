@@ -232,7 +232,6 @@ def LTGE_mutation(ind):
 
 def multiple_mut_operators(ind):
     operators = eval(params['MUTATION_OPERATORS'])
-    ind_0 = ind
 
     for i in operators:
         ind = i(ind)

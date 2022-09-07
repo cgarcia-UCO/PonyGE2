@@ -10,6 +10,7 @@ from representation.latent_tree import latent_tree_random_ind
 from representation.tree import Tree
 from scripts import GE_LR_parser
 from utilities.representation.python_filter import python_filter
+from utilities.misc.prune_if_else_tree import prune_if_else_tree
 
 
 def initialisation(size):
@@ -522,7 +523,19 @@ def LTGE_initialisation(size):
         pop.append(ind)
     return pop
 
+def multiple_init_operators(size):
+    operators = eval(params['INIT_OPERATORS'])
+
+    pop = operators[0](size)
+
+    for i in operators[1:]:
+        for index, ind in enumerate(pop):
+            pop[index] = i(ind)
+
+    return pop
+
 
 # Set ramping attributes for ramped initialisers.
+multiple_init_operators.ramping = True
 PI_grow.ramping = True
 rhh.ramping = True

@@ -140,6 +140,7 @@ def r_prune_if_else_tree(tree, current_condition=''):
                     else:
                         return tree.parent.children[3], 0, None
                 except:
+                    raise #TODO por si volviese ocurrir, examinar por ahora
                     return tree, count_current_condition, None
 
         # Recursive call on the left branch
@@ -172,15 +173,16 @@ def r_prune_if_else_tree(tree, current_condition=''):
 
         # If this is not the root node of the tree and the gini reduction is below the threshold
         # replace the node by a decision leaf
-        if tree.parent is not None and \
-                (np.isnan(gini_split) or ((gini - gini_split) < min_gini_reduction)):
+        # if tree.parent is not None and \
+        #         (np.isnan(gini_split) or ((gini - gini_split) < min_gini_reduction)):
+        if (np.isnan(gini_split) or ((gini - gini_split) < min_gini_reduction)):
             tree.children = []
             generate_leaf(tree, '\'' + most_frecuent + '\'')
             return tree, count_current_condition, gini
 
         # In case that the outputs of the left and the right branches are the same,
         # remove this split and return the left node
-        if output_left == output_right and tree.parent is not None:
+        if output_left == output_right:# and tree.parent is not None: TODO probando a borrar el nodo raiz si no hace nada
             return tree.children[3], count_current_condition, gini
         else:
             return tree, count_current_condition, gini

@@ -24,7 +24,10 @@ class Rule:
         return '&'.join(self.conditions) + ' => ' + self.consequent
 
     def get_antecedent(self):
-        return '&'.join(self.conditions)
+        if len(self.conditions) <= 0:
+            return '(np.array([True for i in range(x.shape[0])]))'
+        else:
+            return '&'.join(self.conditions)
 
     def __eq__(self, other):
         if isinstance(other, Rule):
@@ -62,7 +65,7 @@ class RuleSet:
         for index_i, i in enumerate(self.rules):
             for index_j, j in enumerate(self.rules[index_i+1:]):
                 if j == i:
-                    removing_indexes.add(index_j)
+                    removing_indexes.add(index_i + index_j)
 
         init_num_rules = len(self.rules)
         self.rules = [i for index, i in enumerate(self.rules) if index not in removing_indexes]
@@ -99,7 +102,13 @@ class RuleSet:
         # If this is not a split node, it should be a leaf
         if tree.children[0].root != 'np.where(':
             current_consequent = self.get_consequent(tree.children[0])
-            return current_consequent
+            current_rule = Rule()
+            current_rule.set_consequent(current_consequent)
+
+            if depth == 0:
+                self.fill_rules([current_rule])
+
+            return [current_rule]
 
         else: #Main branch of the recursion
             set_conditions = self.get_conditions(tree.children[1])
@@ -107,31 +116,15 @@ class RuleSet:
             # Left branch recursion
             output_left = self.read_tree(tree.children[3], depth + 1)
 
-            if not isinstance(output_left, list):
-                current_rule = Rule()
-                current_rule.set_consequent(output_left)
-                output_left = current_rule
-
-                for i in set_conditions:
-                    output_left.add_condition(i)
-
-            else:
-                for i in set_conditions:
-                    self.r_add_conditions(output_left, i)
+            for i in set_conditions:
+                self.r_add_conditions(output_left, i)
 
             # Right branch recursion
             output_right = self.read_tree(tree.children[5], depth + 1)
 
             neg_set_conditions = '(~ (' + '&'.join(set_conditions) + '))'
 
-            if not isinstance(output_right, list):
-                current_rule = Rule()
-                current_rule.set_consequent(output_right)
-                output_right = current_rule
-
-                output_right.add_condition(neg_set_conditions)
-            else:
-                self.r_add_conditions(output_right, neg_set_conditions)
+            self.r_add_conditions(output_right, neg_set_conditions)
 
             if depth == 0:
                 self.fill_rules([output_left, output_right])
