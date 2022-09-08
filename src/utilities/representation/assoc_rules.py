@@ -78,6 +78,9 @@ class RuleSet:
         self.rules = [i for (index, i), confidence in zip(enumerate(self.rules), confidence_values)
                       if confidence >= threshold]
 
+    def filter_by_consequent(self, target):
+        self.rules = [i for i in self.rules if i.get_consequent() == target]
+
     def fill_rules(self, recursive_list_rules):
 
         if isinstance(recursive_list_rules, Rule):
@@ -197,6 +200,9 @@ if __name__ == "__main__":
         conf_filtering = 0.7
     else:
         conf_filtering = params['ASSOC_CONF_FILTER']
+
+    if 'FILTEROUT_NOTTARGET_RULES' in params and params['FILTEROUT_NOTTARGET_RULES']:
+        rules.filter_by_consequent("'" + params['CLASS_ASSOC_RULES_TARGET'] + "'")
 
     rules.filter_duplicates()
     rules.filter_by_confidence(params['FITNESS_FUNCTION'].training_in,

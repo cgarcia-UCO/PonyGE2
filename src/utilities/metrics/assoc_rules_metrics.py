@@ -3,6 +3,9 @@ import sys
 import numpy as np
 import re
 
+from algorithm.parameters import params
+
+
 class AssocRules_Stats:
 
     def __init__(self):
@@ -72,9 +75,12 @@ class AssocRules_Stats:
     def get_uncovered(self, rules, x, y, target_class):
         index_target_patterns = y == target_class
 
+        target_consequent = "'"+target_class+"'"
+
         for i in rules:
-            covered_patterns = eval(i.get_antecedent())
-            index_target_patterns = index_target_patterns & (~ covered_patterns)
+            if i.get_consequent() == target_consequent:
+                covered_patterns = eval(i.get_antecedent())
+                index_target_patterns = index_target_patterns & (~ covered_patterns)
 
         return x[index_target_patterns]
 
@@ -98,7 +104,8 @@ class AssocRules_Stats:
 
             freq_attributes = self.get_freq_attributes(rules, x) * 100
 
-            uncovered_patterns = self.get_uncovered(rules, x, y, 'Si')
+            uncovered_patterns = self.get_uncovered(rules, x, y,
+                                                    params['CLASS_ASSOC_RULES_TARGET'])
 
             f.write("{:.1f}".format(min_support*100)+":"+"{:.1f}".format(avg_support*100)+'\t')
 
@@ -116,7 +123,8 @@ class AssocRules_Stats:
                   "{:.0f}".format(np.percentile(freq_attributes, 25))+','+
                   "{:.0f}".format(min(freq_attributes))+'}'+'\t')
 
-            f.write("{:.0f}".format(len(uncovered_patterns)/len(y)*100))
+            f.write("{:.0f}".format(
+                len(uncovered_patterns)/sum(y == params['CLASS_ASSOC_RULES_TARGET'])*100))
         except:
             if len(rules) > 0:
                 f.write('Error')

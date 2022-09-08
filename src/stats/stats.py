@@ -707,6 +707,9 @@ def print_assoc_rules_stats(individuals, filename):
         conf_fitlering = params['ASSOC_CONF_FILTER']
 
     # Filter the rules
+    if 'FILTEROUT_NOTTARGET_RULES' in params and params['FILTEROUT_NOTTARGET_RULES']:
+        rules.filter_by_consequent("'"+params['CLASS_ASSOC_RULES_TARGET']+"'")
+
     rules.filter_duplicates()
     rules.filter_by_confidence(params['FITNESS_FUNCTION'].training_in,
                                params['FITNESS_FUNCTION'].training_exp, conf_fitlering)
