@@ -138,7 +138,8 @@ def nsga2_replacement(new_pop, old_pop):
             # Sort the current pareto front with respect to crowding distance.
             pareto.fronts[i] = sorted(pareto.fronts[i],
                                       key=lambda item:
-                                      pareto.crowding_distance[item])
+                                      pareto.crowding_distance[item],
+                                      reverse=True)
 
             # Get number of individuals to add in temp to achieve the pop_size
             diff_size = pop_size - len(temp_pop)

@@ -276,7 +276,7 @@ def subtree(p_0, p_1):
             tree0 = t1
 
             # Swap over the subtrees between parents.
-            i1 = p1.children.index(t1)
+            i1 = [id(i) for i in p1.children].index(id(t1))
             p1.children[i1] = t0
 
             # Set the parents of the crossed-over subtrees as their new
@@ -290,7 +290,7 @@ def subtree(p_0, p_1):
             tree1 = t0
 
             # Swap over the subtrees between parents.
-            i0 = p0.children.index(t0)
+            i0 = [id(i) for i in p0.children].index(id(t0))
             p0.children[i0] = t1
 
             # Set the parents of the crossed-over subtrees as their new
@@ -304,8 +304,8 @@ def subtree(p_0, p_1):
 
             # For the parent nodes of the original subtrees, get the indexes
             # of the original subtrees.
-            i0 = p0.children.index(t0)
-            i1 = p1.children.index(t1)
+            i0 = [id(i) for i in p0.children].index(id(t0))
+            i1 = [id(i) for i in p1.children].index(id(t1))
 
             # Swap over the subtrees between parents.
             p0.children[i0] = t1

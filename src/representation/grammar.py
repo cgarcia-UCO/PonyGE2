@@ -43,6 +43,9 @@ class Grammar(object):
         self.productionregex = '(?=\#)(?:\#.*$)|(?!\#)\s*(?P<production>(?:[^\'\"\|\#]+|\'.*?\'|".*?")+)'
         self.productionpartsregex = '\ *([\r\n]+)\ *|([^\'"<\r\n]+)|\'(.*?)\'|"(.*?)"|(?P<subrule><[^>|\s]+>)|([<]+)'
 
+        # to speed up the recursion step
+        self.recursion_cache = {}
+
         # Read in BNF grammar, set production rules, terminals and
         # non-terminals.
         self.read_bnf_file(file_name)
@@ -316,20 +319,29 @@ class Grammar(object):
 
         # Get choices of current symbol.
         choices = self.rules[cur_symbol]['choices']
-        nt = self.non_terminals[cur_symbol]
 
         recursive = False
         for choice in choices:
             for sym in choice['choice']:
-                # Recurse over choices.
-                recursive_symbol = self.check_recursion(sym["symbol"], seen)
-                recursive = recursive or recursive_symbol
+                # T is always non-recursive so no need to care about them
+                if sym["type"] == "NT":
+                    # Check the cache, no need to traverse the same subtree multiple times
+                    if sym["symbol"] in self.recursion_cache:
+                        # Grab previously calculated value
+                        recursion_result = self.recursion_cache[sym["symbol"]]
+                    else:
+                        # Traverse subtree
+                        recursion_result = self.check_recursion(sym["symbol"], seen)
+                        # Add result to cache for future runs
+                        self.recursion_cache[sym["symbol"]] = recursion_result
+
+                    recursive = recursive or recursion_result
 
         # Set recursive properties.
-        nt['recursive'] = recursive
+        self.non_terminals[cur_symbol]['recursive'] = recursive
         seen.remove(cur_symbol)
 
-        return nt['recursive']
+        return recursive
 
     def set_arity(self):
         """
